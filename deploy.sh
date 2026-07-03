@@ -6,6 +6,7 @@
 # ============================================
 set -e
 export PATH="/opt/homebrew/bin:$PATH"
+export GH_CONFIG_DIR="$HOME/.gh-config"   # ~/.config가 root 소유라 우회
 cd "$(dirname "$0")"
 
 # 1. GitHub 로그인 확인
