@@ -1,0 +1,2105 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>영웅문: 화산논검</title>
+<style>
+/* ===== 전체 테마: 수묵 무협풍 ===== */
+:root{
+  --bg:#12100e;          /* 먹빛 배경 */
+  --panel:#1e1a16;       /* 패널 배경 */
+  --panel2:#2a241e;      /* 밝은 패널 */
+  --ink:#e8ddc8;         /* 한지색 글자 */
+  --dim:#9a8f7a;         /* 흐린 글자 */
+  --red:#c0392b;         /* 주홍 (인장) */
+  --gold:#d9a441;        /* 금색 */
+  --geom:#6ea8dc;        /* 검(劍) 파랑 */
+  --jang:#d96b5b;        /* 장(掌) 붉음 */
+  --gwon:#c98f3d;        /* 권(拳) 갈색금 */
+  --gi:#68c2a0;          /* 기(氣) 청록 */
+  --hp:#c0392b;
+  --exp:#d9a441;
+}
+*{box-sizing:border-box; margin:0; padding:0; user-select:none;}
+body{
+  background:var(--bg);
+  color:var(--ink);
+  font-family:"Noto Serif KR","Apple SD Gothic Neo","Nanum Myeongjo",serif;
+  min-height:100vh;
+  background-image:radial-gradient(ellipse at 50% 0%, #241f19 0%, #12100e 70%);
+}
+#app{max-width:960px; margin:0 auto; padding:16px; min-height:100vh; display:flex; flex-direction:column;}
+button{
+  font-family:inherit; cursor:pointer;
+  background:var(--panel2); color:var(--ink);
+  border:1px solid #4a4036; border-radius:6px;
+  padding:10px 18px; font-size:15px;
+  transition:all .15s;
+}
+button:hover:not(:disabled){border-color:var(--gold); color:var(--gold);}
+button:disabled{opacity:.35; cursor:default;}
+button.primary{background:var(--red); border-color:#e05a48; color:#fff; font-weight:bold;}
+button.primary:hover:not(:disabled){background:#d64a38; color:#fff;}
+h1,h2,h3{font-weight:600;}
+.dim{color:var(--dim);}
+.gold{color:var(--gold);}
+.red{color:#e06050;}
+
+/* ===== 타이틀 화면 ===== */
+.title-screen{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:24px; text-align:center;}
+.title-main{
+  font-size:72px; letter-spacing:16px; font-weight:700;
+  background:linear-gradient(180deg,#f0e2c0,#c9a355);
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+  text-shadow:0 0 40px rgba(217,164,65,.15);
+}
+.title-sub{font-size:22px; color:var(--dim); letter-spacing:8px;}
+.title-desc{max-width:520px; line-height:1.9; color:var(--dim); font-size:14px;}
+.seal{
+  display:inline-block; background:var(--red); color:#fff;
+  padding:4px 10px; border-radius:4px; font-size:13px; letter-spacing:2px;
+}
+
+/* ===== 캐릭터 선택 ===== */
+.char-grid{display:flex; gap:20px; justify-content:center; flex-wrap:wrap;}
+.char-card{
+  width:280px; background:var(--panel); border:1px solid #4a4036; border-radius:10px;
+  padding:24px; cursor:pointer; transition:all .2s; text-align:left;
+}
+.char-card:hover{border-color:var(--gold); transform:translateY(-4px); box-shadow:0 8px 30px rgba(0,0,0,.5);}
+.char-portrait{font-size:52px; text-align:center; margin-bottom:12px;}
+.char-name{font-size:24px; text-align:center; color:var(--gold);}
+.char-title{font-size:13px; text-align:center; color:var(--dim); margin-bottom:14px;}
+.char-stat{font-size:14px; line-height:1.9;}
+
+/* ===== 상단 HUD ===== */
+.hud{
+  display:flex; align-items:center; gap:16px; flex-wrap:wrap;
+  background:var(--panel); border:1px solid #3a332b; border-radius:8px;
+  padding:10px 16px; margin-bottom:14px; font-size:15px;
+}
+.hud .spacer{flex:1;}
+.hpbar{width:130px; height:10px; background:#3a2020; border-radius:5px; overflow:hidden; display:inline-block; vertical-align:middle;}
+.hpbar>div{height:100%; background:var(--hp); transition:width .3s;}
+
+/* ===== 지도 화면 ===== */
+.map-act-title{text-align:center; font-size:22px; color:var(--gold); margin:10px 0 4px;}
+.map-act-sub{text-align:center; color:var(--dim); font-size:13px; margin-bottom:16px;}
+.map-floors{display:flex; flex-direction:column-reverse; gap:10px; align-items:center;}
+.map-floor{display:flex; gap:14px; align-items:center;}
+.floor-num{width:36px; text-align:right; color:var(--dim); font-size:13px;}
+.map-node{
+  min-width:120px; padding:12px 16px; text-align:center;
+  background:var(--panel); border:1px solid #3a332b; border-radius:8px; font-size:15px;
+}
+.map-node.avail{border-color:var(--gold); cursor:pointer; box-shadow:0 0 14px rgba(217,164,65,.12);}
+.map-node.avail:hover{background:var(--panel2); transform:scale(1.05);}
+.map-node.done{opacity:.3;}
+.map-node.future{opacity:.55;}
+.map-node .nicon{font-size:20px; display:block; margin-bottom:2px;}
+
+/* ===== 전투 화면 ===== */
+.combat{display:flex; flex-direction:column; gap:12px; flex:1;}
+.enemy-zone{
+  background:var(--panel); border:1px solid #3a332b; border-radius:10px;
+  padding:18px 22px; display:flex; align-items:center; gap:20px;
+}
+.enemy-face{font-size:56px; filter:drop-shadow(0 0 12px rgba(192,57,43,.3));}
+.enemy-face.hit{animation:shake .3s;}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+.enemy-info{flex:1;}
+.enemy-name{font-size:20px; color:#e8b0a0;}
+.enemy-hpbar{height:16px; background:#3a2020; border-radius:8px; overflow:hidden; margin:8px 0; position:relative;}
+.enemy-hpbar>div{height:100%; background:linear-gradient(90deg,#a03025,#d05040); transition:width .3s;}
+.enemy-hpbar span{position:absolute; inset:0; text-align:center; font-size:12px; line-height:16px; color:#fff; text-shadow:0 1px 2px #000;}
+.intent{
+  background:var(--panel2); border:1px solid #4a4036; border-radius:8px;
+  padding:10px 16px; font-size:14px; text-align:center; min-width:110px;
+}
+.intent .big{font-size:20px; display:block;}
+.score-zone{
+  display:flex; align-items:center; justify-content:center; gap:14px;
+  background:var(--panel); border:1px solid #3a332b; border-radius:10px; padding:12px;
+  font-size:15px; min-height:64px;
+}
+.score-box{background:var(--panel2); border-radius:8px; padding:6px 16px; text-align:center; min-width:86px;}
+.score-box .lbl{font-size:11px; color:var(--dim); display:block;}
+.score-box .val{font-size:22px; font-weight:bold;}
+.chips-c{color:var(--geom);}
+.mult-c{color:var(--red); color:#e06050;}
+.dmg-c{color:var(--gold);}
+.hand-name-lbl{font-size:18px; color:var(--gold); min-width:120px; text-align:center;}
+.combat-log{
+  font-size:13px; color:var(--dim); text-align:center; min-height:38px; line-height:1.5;
+}
+.hand-zone{display:flex; gap:10px; justify-content:center; flex-wrap:wrap; min-height:180px; align-items:flex-end; padding-top:14px;}
+/* ===== 무공 카드 (슬더스 방식) ===== */
+.pcard{
+  width:110px; height:156px; border-radius:9px; cursor:pointer; position:relative;
+  background:linear-gradient(160deg,#efe6d0,#d8ccb0);
+  color:#222; border:2px solid #8a7a5c;
+  display:flex; flex-direction:column; align-items:center;
+  padding:8px 7px 6px; text-align:center;
+  transition:all .15s; box-shadow:0 3px 8px rgba(0,0,0,.4);
+}
+.pcard:hover{transform:translateY(-10px) scale(1.04); box-shadow:0 8px 18px rgba(0,0,0,.5);}
+/* 기력 부족 카드 */
+.pcard.noenergy{filter:grayscale(.75) brightness(.75); cursor:default;}
+.pcard.noenergy:hover{transform:none;}
+/* 기력 비용 구슬 */
+.pcard .cost{
+  position:absolute; top:-8px; left:-8px; width:26px; height:26px;
+  background:radial-gradient(circle at 35% 30%, #7ec8e8, #2a6099);
+  border:2px solid #1a4066; border-radius:50%;
+  color:#fff; font-size:14px; font-weight:bold; line-height:22px; z-index:3;
+  text-shadow:0 1px 2px #000;
+}
+.pcard .cname{
+  font-size:14px; font-weight:700; z-index:2; margin-top:2px;
+  border-bottom:1px solid rgba(0,0,0,.2); padding-bottom:4px; width:100%;
+}
+.pcard .up-mark{color:#b8860b;}
+.pcard .suit-art{flex:1; display:flex; align-items:center; justify-content:center; opacity:.30; z-index:1;}
+.pcard .suit-art svg{width:44px; height:44px;}
+.pcard .cdesc{font-size:11.5px; line-height:1.45; z-index:2; min-height:36px;}
+.pcard .ctype{font-size:9.5px; color:#7a6a50; z-index:2; margin-top:4px;}
+/* 문파 색 (윗단 띠 + 그림) */
+.pcard.s-geom{border-top:5px solid var(--geom);} .pcard.s-geom .suit-art{color:#2a6099;}
+.pcard.s-jang{border-top:5px solid var(--jang);} .pcard.s-jang .suit-art{color:#b04030;}
+.pcard.s-gwon{border-top:5px solid var(--gwon);} .pcard.s-gwon .suit-art{color:#906020;}
+.pcard.s-gi{border-top:5px solid var(--gi);} .pcard.s-gi .suit-art{color:#2a8060;}
+/* 분류별 이름 색 */
+.pcard.t-attack .cname{color:#8a2a20;}
+.pcard.t-skill .cname{color:#1f5a48;}
+.pcard.t-power .cname{color:#8a6a10;}
+/* ===== 플레이어 바 (기력/방어/힘 + 턴 종료) ===== */
+.player-bar{
+  display:flex; align-items:center; gap:14px;
+  background:var(--panel); border:1px solid #3a332b; border-radius:10px;
+  padding:10px 16px;
+}
+.player-bar .spacer{flex:1;}
+.energy-orb{
+  width:54px; height:54px; border-radius:50%;
+  background:radial-gradient(circle at 35% 30%, #8ad4f0, #1f4f80);
+  border:3px solid #d9a441;
+  display:flex; align-items:center; justify-content:center;
+  color:#fff; font-size:16px; text-shadow:0 1px 3px #000;
+  box-shadow:0 0 16px rgba(126,200,232,.35);
+}
+.energy-orb b{font-size:22px;}
+.pstat{font-size:15px;}
+.st-chip{font-weight:600;}
+/* ===== 나레이션 일러스트 ===== */
+.story-img{
+  border:1px solid #4a4036; border-radius:8px; overflow:hidden;
+  background:#0a0908; display:flex; justify-content:center;
+  animation:storyFade .9s forwards;
+}
+.story-img svg{width:100%; height:auto; display:block;}
+.story-img.portrait svg{width:auto; height:170px; padding:8px 0;}
+.combat-actions{display:flex; gap:12px; justify-content:center; align-items:center; padding-bottom:8px;}
+.combat-sub{display:flex; gap:18px; justify-content:center; font-size:13px; color:var(--dim);}
+
+/* ===== 보상 / 상점 / 이벤트 공용 ===== */
+.center-panel{
+  max-width:640px; margin:30px auto; background:var(--panel);
+  border:1px solid #4a4036; border-radius:12px; padding:30px; text-align:center;
+  display:flex; flex-direction:column; gap:18px;
+}
+.center-panel h2{color:var(--gold); font-size:26px;}
+.choice-row{display:flex; gap:14px; justify-content:center; flex-wrap:wrap;}
+.relic-box{
+  background:var(--panel2); border:1px solid #4a4036; border-radius:10px;
+  padding:16px; width:180px; cursor:pointer; transition:all .15s;
+}
+.relic-box:hover{border-color:var(--gold); transform:translateY(-3px);}
+.relic-box .ricon{font-size:32px;}
+.relic-box .rname{color:var(--gold); font-size:16px; margin:6px 0;}
+.relic-box .rdesc{font-size:12px; color:var(--dim); line-height:1.6;}
+.relic-box .rprice{margin-top:8px; color:var(--gold); font-weight:bold;}
+.relic-box.disabled{opacity:.35; cursor:default;}
+.relic-strip{display:flex; gap:6px; flex-wrap:wrap;}
+.relic-chip{
+  background:var(--panel2); border:1px solid #4a4036; border-radius:6px;
+  padding:3px 8px; font-size:16px; cursor:help; position:relative;
+}
+.relic-chip:hover::after{
+  content:attr(data-tip); position:absolute; bottom:110%; left:50%; transform:translateX(-50%);
+  background:#000; color:var(--ink); padding:8px 12px; border-radius:6px; font-size:12px;
+  white-space:nowrap; z-index:50; border:1px solid #4a4036;
+}
+.deck-grid{display:flex; gap:10px; flex-wrap:wrap; justify-content:center; max-height:420px; overflow-y:auto; padding:12px;}
+.deck-grid .pcard:hover{transform:translateY(-4px);}
+.overlay{
+  position:fixed; inset:0; background:rgba(0,0,0,.75); z-index:100;
+  display:flex; align-items:center; justify-content:center;
+}
+.overlay .center-panel{max-width:720px; max-height:85vh; overflow-y:auto; margin:0;}
+.event-art{font-size:64px;}
+.event-text{line-height:1.9; color:var(--ink); font-size:15px;}
+.floating-dmg{
+  position:absolute; font-size:32px; font-weight:bold; color:var(--gold);
+  animation:floatUp 1s forwards; pointer-events:none; text-shadow:0 2px 6px #000; z-index:20;
+}
+@keyframes floatUp{0%{opacity:1; transform:translateY(0)}100%{opacity:0; transform:translateY(-50px)}}
+
+/* ===== 전투 연출(FX) ===== */
+#fx{position:fixed; inset:0; pointer-events:none; z-index:200;}
+/* 출수 시 카드가 위로 날아가며 사라짐 */
+.pcard.fly{animation:flyOut .35s forwards; pointer-events:none;}
+@keyframes flyOut{to{transform:translateY(-170px) scale(.7) rotate(-6deg); opacity:0;}}
+/* 연출 중 손패 잠금 */
+.hand-zone.locked{pointer-events:none; opacity:.9;}
+/* 초식명 붓글씨 스플래시 */
+.fx-splash{
+  position:fixed; left:50%; top:36%; transform:translate(-50%,-50%);
+  font-size:54px; font-weight:700; color:var(--gold); letter-spacing:10px;
+  text-shadow:0 0 34px rgba(217,164,65,.55), 0 2px 4px #000;
+  animation:splash .9s forwards; white-space:nowrap; text-align:center;
+}
+.fx-splash-sub{font-size:20px; color:var(--gi); letter-spacing:4px; margin-top:8px; text-shadow:0 2px 6px #000;}
+@keyframes splash{
+  0%{opacity:0; transform:translate(-50%,-50%) scale(2.4);}
+  22%{opacity:1; transform:translate(-50%,-50%) scale(1);}
+  72%{opacity:1;}
+  100%{opacity:0; transform:translate(-50%,-62%) scale(1);}
+}
+/* 참격 궤적 — --rot(각도), --slashc(색) 파라미터 */
+.fx-slash{position:fixed; width:160px; height:160px; z-index:205;}
+.fx-slash::before{
+  content:''; position:absolute; left:-15%; top:50%; width:130%; height:6px;
+  background:linear-gradient(90deg,transparent,#fff,var(--slashc,#ffd27a),transparent);
+  box-shadow:0 0 14px var(--slashc,#ffd27a);
+  border-radius:3px;
+  transform:rotate(var(--rot,-38deg));
+  animation:slashSweep .34s forwards;
+}
+@keyframes slashSweep{
+  0%{opacity:0; transform:rotate(var(--rot,-38deg)) translateX(-95px) scaleX(.3);}
+  30%{opacity:1;}
+  100%{opacity:0; transform:rotate(var(--rot,-38deg)) translateX(95px) scaleX(1.15);}
+}
+/* 파편 입자 (권/폭발) */
+.fx-part{
+  position:fixed; border-radius:50%; pointer-events:none; z-index:206;
+  box-shadow:0 0 8px currentColor;
+  animation:partFly .6s ease-out forwards;
+}
+@keyframes partFly{
+  0%{opacity:1; transform:translate(0,0) scale(1);}
+  100%{opacity:0; transform:translate(var(--dx),var(--dy)) scale(.15);}
+}
+/* 파동 링 (장풍/기공/음파) */
+.fx-ring{
+  position:fixed; width:170px; height:170px; margin-left:-85px; margin-top:-85px;
+  border:4px solid; border-radius:50%; pointer-events:none; z-index:205;
+  box-shadow:0 0 22px currentColor inset;
+  animation:ringOut .55s ease-out forwards;
+}
+@keyframes ringOut{
+  0%{opacity:1; transform:scale(.12);}
+  100%{opacity:0; transform:scale(1.05);}
+}
+/* 기막(氣幕) 방어 돔 */
+.fx-guard{
+  position:fixed; width:140px; height:66px; pointer-events:none; z-index:205;
+  border:3px solid var(--gi); border-bottom:none;
+  border-radius:70px 70px 0 0;
+  background:linear-gradient(180deg, rgba(104,194,160,.28), transparent);
+  box-shadow:0 0 24px rgba(104,194,160,.4);
+  animation:guardUp .85s ease-out forwards;
+}
+@keyframes guardUp{
+  0%{opacity:0; transform:translateY(24px) scale(.6);}
+  30%{opacity:1; transform:translateY(0) scale(1);}
+  75%{opacity:1;}
+  100%{opacity:0; transform:translateY(-8px) scale(1.04);}
+}
+.fx-guard.flash{animation:guardFlash .45s forwards;}
+@keyframes guardFlash{
+  0%{opacity:1; transform:scale(1); filter:brightness(2);}
+  100%{opacity:0; transform:scale(1.12);}
+}
+/* 떠오르는 숫자 (데미지/방어) */
+.fx-float{
+  position:fixed; font-weight:bold; pointer-events:none; z-index:210;
+  transform:translateX(-50%); text-shadow:0 2px 6px #000;
+  animation:floatUp 1s forwards;
+}
+/* 피격 시 화면 전체 흔들림 */
+.shake-app{animation:appShake .4s;}
+@keyframes appShake{
+  0%,100%{transform:translate(0,0)}
+  20%{transform:translate(-7px,4px)} 40%{transform:translate(7px,-4px)}
+  60%{transform:translate(-5px,-3px)} 80%{transform:translate(5px,3px)}
+}
+/* 피격 시 붉은 섬광 (화면 가장자리) */
+.fx-vignette{
+  position:fixed; inset:0;
+  box-shadow:inset 0 0 130px 45px rgba(192,57,43,.55);
+  animation:vign .45s forwards;
+}
+@keyframes vign{0%{opacity:0}30%{opacity:1}100%{opacity:0}}
+/* 적 초상 SVG 크기 */
+.enemy-face svg{width:118px; height:118px; display:block;}
+/* 피격 시 적 초상 섬광 */
+.enemy-face.hit svg{animation:eflash .4s;}
+@keyframes eflash{
+  25%{filter:brightness(2.4) saturate(1.6) drop-shadow(0 0 18px #ff7a5a);}
+  100%{filter:none;}
+}
+/* 적: 평소 숨쉬기 / 공격 돌진 / 격파 */
+.enemy-face{animation:bob 3.2s ease-in-out infinite;}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+.enemy-face.lunge{animation:lunge .34s;}
+@keyframes lunge{40%{transform:translate(-46px,28px) scale(1.12);}100%{transform:translate(0,0);}}
+.enemy-face.ko{animation:koFall .65s forwards;}
+@keyframes koFall{to{transform:rotate(80deg) translateY(34px); opacity:0; filter:grayscale(1);}}
+/* 연계 점수 박스 강조 */
+.combo-box{border:1px solid var(--gi); box-shadow:0 0 10px rgba(104,194,160,.25);}
+/* 비전서 표 */
+.codex table{width:100%; border-collapse:collapse; font-size:13px;}
+.codex td{padding:5px 8px; border-bottom:1px solid #3a332b; text-align:left; vertical-align:top;}
+.codex h3{color:var(--gold); margin:14px 0 6px; font-size:16px; text-align:left;}
+
+/* ===== 스토리(나레이션) 화면 ===== */
+.story-panel{max-width:600px; margin-top:60px; padding:40px 44px;}
+.story-h{
+  font-size:24px; color:var(--gold); letter-spacing:6px; margin-bottom:8px;
+  border-bottom:1px solid #4a4036; padding-bottom:14px;
+}
+.story-body{text-align:left; min-height:180px;}
+.story-p{
+  font-size:15px; line-height:1.9; color:var(--ink); margin:12px 0;
+  opacity:0; animation:storyFade .8s forwards;
+}
+@keyframes storyFade{from{opacity:0; transform:translateY(10px);}to{opacity:1; transform:translateY(0);}}
+/* 대사 화자 표시 */
+.who{
+  color:var(--gold); font-weight:bold; margin-right:6px;
+  border-left:3px solid var(--gold); padding-left:8px;
+}
+.who.villain{color:#e06050; border-left-color:#e06050;}
+/* ===== 가이드 본문 ===== */
+.guide-body{text-align:left;}
+.guide-body h3{color:var(--gold); margin:16px 0 6px; font-size:16px;}
+.guide-body p{font-size:14px; line-height:1.8; color:var(--ink); margin:6px 0;}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+"use strict";
+/* ============================================================
+   영웅문: 화산논검
+   — 무협 로그라이크 덱빌딩 (슬레이 더 스파이어 × 발라트로)
+   김용 <영웅문>(사조영웅전) 세계관 기반
+   ============================================================ */
+
+/* ===== 기본 데이터 ===== */
+
+// 문파(무늬) 정의 — 발라트로의 카드 무늬에 해당
+const SUITS = {
+  geom: {key:'geom', name:'검', hanja:'劍', desc:'검법'},
+  jang: {key:'jang', name:'장', hanja:'掌', desc:'장법'},
+  gwon: {key:'gwon', name:'권', hanja:'拳', desc:'권법'},
+  gi:   {key:'gi',   name:'기', hanja:'氣', desc:'내공 (출수 시 성수만큼 방어 획득)'},
+};
+const SUIT_KEYS = ['geom','jang','gwon','gi'];
+const HANJA_NUM = ['','一','二','三','四','五','六','七','八','九']; // 성(星) 표기용 한자
+
+/* ===== 문파 아이콘 SVG (카드 그림) — currentColor로 문파 색이 입혀진다 ===== */
+const SUIT_ICONS = {
+  // 검(劍): 곧은 검
+  geom: `<svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+    <path d="M12 1 L14.2 13 L12 16.2 L9.8 13 Z"/>
+    <rect x="7.6" y="15.8" width="8.8" height="1.7" rx="0.85"/>
+    <rect x="11.1" y="17.4" width="1.8" height="4.6" rx="0.9"/>
+    <circle cx="12" cy="22.4" r="1.2"/></svg>`,
+  // 장(掌): 펼친 손바닥
+  jang: `<svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+    <rect x="6.8" y="10.2" width="10.4" height="9.2" rx="3.4"/>
+    <rect x="6.9" y="4.6" width="2.1" height="7" rx="1.05"/>
+    <rect x="9.55" y="3" width="2.1" height="8.6" rx="1.05"/>
+    <rect x="12.2" y="3.4" width="2.1" height="8.2" rx="1.05"/>
+    <rect x="14.85" y="4.9" width="2.1" height="6.7" rx="1.05"/>
+    <rect x="3.9" y="10.6" width="2.3" height="6" rx="1.15" transform="rotate(26 5.05 13.6)"/></svg>`,
+  // 권(拳): 정면 주먹
+  gwon: `<svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+    <rect x="5" y="7.6" width="14" height="10.4" rx="4.2"/>
+    <circle cx="7.6" cy="7.8" r="1.9"/><circle cx="10.6" cy="7.2" r="1.9"/>
+    <circle cx="13.6" cy="7.2" r="1.9"/><circle cx="16.5" cy="7.8" r="1.9"/>
+    <rect x="7.2" y="14.2" width="8.2" height="3.2" rx="1.6" opacity=".45"/>
+    <rect x="8.6" y="18" width="6.8" height="3.6" rx="1.4"/></svg>`,
+  // 기(氣): 소용돌이 기류
+  gi: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" xmlns="http://www.w3.org/2000/svg">
+    <path d="M12 2.6 a9.4 9.4 0 1 1 -9.4 9.4 a6.6 6.6 0 1 1 6.6 -6.6 a3.9 3.9 0 1 1 -3.9 3.9"/></svg>`,
+};
+
+/* ===== 적 초상 SVG 생성기 =====
+   cfg: {robe:도포색, skin, hair:머리모양, hairColor, hoodColor, beard:수염색,
+         blind:눈가리개, weapon:무기, acc:포인트색, aura:기운색(정예/보스)} */
+function enemySVG(a){
+  const skin = a.skin || '#e6c39a';
+  const acc = a.acc || '#c0392b';
+  const hairC = a.hairColor || '#26221e';
+  let s = `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">`;
+  // 먹빛 원 배경 + (보스/정예) 기운 테
+  s += `<circle cx="60" cy="62" r="52" fill="#0a0908" opacity=".5"/>`;
+  s += `<circle cx="60" cy="62" r="52" fill="none" stroke="${a.aura||'#4a4036'}" stroke-width="${a.aura?2.5:1.2}" opacity="${a.aura?'.85':'.6'}"/>`;
+  if(a.aura) s += `<circle cx="60" cy="62" r="57" fill="none" stroke="${a.aura}" stroke-width="1.2" opacity=".35"/>`;
+  // 왼팔 (늘어뜨림)
+  s += `<path d="M43 72 Q37 84 43 95" stroke="${a.robe}" stroke-width="10" fill="none" stroke-linecap="round"/>`;
+  // 몸통 도포 + 어깨 그늘 + 허리띠
+  s += `<path d="M38 108 L42 66 Q60 57 78 66 L82 108 Z" fill="${a.robe}"/>`;
+  s += `<path d="M42 66 Q60 57 78 66 L78 75 Q60 66 42 75 Z" fill="#000" opacity=".22"/>`;
+  s += `<rect x="45" y="85" width="30" height="5" rx="2" fill="${acc}"/>`;
+  // 오른팔 (무기 쪽으로 뻗음)
+  s += `<path d="M77 71 Q86 78 88 91" stroke="${a.robe}" stroke-width="10" fill="none" stroke-linecap="round"/>`;
+  // 무기
+  const w = a.weapon;
+  if(w==='dao'){ // 곡도
+    s += `<path d="M87 92 Q98 70 91 44 Q101 68 95 94 Z" fill="#b9c2cc"/><rect x="84" y="90" width="10" height="4.5" rx="2" fill="${acc}"/>`;
+  }else if(w==='jian'){ // 곧은 검
+    s += `<rect x="86.5" y="44" width="3.4" height="46" rx="1.5" fill="#c8d0da"/><rect x="81.5" y="87" width="13" height="3.6" rx="1.8" fill="${acc}"/>`;
+  }else if(w==='spear'){ // 장창
+    s += `<rect x="86.8" y="28" width="2.8" height="70" rx="1.4" fill="#7a5a38"/><path d="M88.2 15 L94 30 L88.2 26 L82.4 30 Z" fill="#c8d0da"/><circle cx="88.2" cy="32" r="2.2" fill="${acc}"/>`;
+  }else if(w==='daggers'){ // 쌍비수 (양손)
+    s += `<path d="M88 90 L92 74 L95 90 Z" fill="#c8d0da"/><rect x="86" y="89" width="8" height="3" rx="1.5" fill="${acc}"/>`;
+    s += `<path d="M40 93 L44 78 L47 93 Z" fill="#c8d0da"/><rect x="38" y="92" width="8" height="3" rx="1.5" fill="${acc}"/>`;
+  }else if(w==='claw'){ // 조법 (갈고리 손톱)
+    s += `<circle cx="89" cy="91" r="4.5" fill="${skin}"/>`;
+    s += `<path d="M91 88 Q99 82 100 74 M92 91 Q101 88 104 82 M92 94 Q101 94 105 90" stroke="#d8dee6" stroke-width="2.4" fill="none" stroke-linecap="round"/>`;
+  }else if(w==='staffsnake'){ // 사두장 (뱀 지팡이)
+    s += `<rect x="86.8" y="34" width="3.2" height="62" rx="1.6" fill="#6a5a3a"/>`;
+    s += `<path d="M88.4 34 Q80 28 85 21 Q92 15 97 22 Q99 28 93 30" fill="none" stroke="#7fae6a" stroke-width="3.6" stroke-linecap="round"/><circle cx="95" cy="23" r="1.4" fill="#d94"/>`;
+  }else if(w==='palm'){ // 장풍 (뻗은 손 + 파동)
+    s += `<circle cx="92" cy="72" r="6" fill="${skin}"/>`;
+    s += `<path d="M100 62 Q108 72 100 82 M104 58 Q114 72 104 86" stroke="${acc}" stroke-width="2.6" fill="none" stroke-linecap="round" opacity=".85"/>`;
+  }else if(w==='fan'){ // 접선 (부채)
+    s += `<path d="M88 90 L99 70 A15 15 0 0 0 74 72 Z" fill="#e8ddc0"/><path d="M88 90 L86 72 M88 90 L93 71 M88 90 L80 73" stroke="#b09a6a" stroke-width="1.2"/><rect x="86" y="88" width="5" height="6" rx="2" fill="${acc}"/>`;
+  }
+  // 긴 머리는 머리통보다 먼저 (뒤로 흘러내림)
+  if(a.hair==='long') s += `<path d="M46 36 Q60 22 74 36 L79 76 L70 71 L73 45 Q60 34 47 45 L50 71 L41 76 Z" fill="${hairC}"/>`;
+  if(a.hair==='wild') s += `<path d="M44 40 L38 26 L50 32 L54 20 L60 30 L66 20 L70 32 L82 26 L76 40 Z" fill="${hairC}"/><path d="M46 38 Q60 24 74 38 L76 62 L68 58 L70 45 Q60 36 50 45 L52 58 L44 62 Z" fill="${hairC}"/>`;
+  // 머리 (얼굴)
+  s += `<circle cx="60" cy="44" r="13" fill="${skin}"/>`;
+  // 머리 모양
+  if(a.hair==='topknot' || a.hair==='coronet'){
+    s += `<path d="M47 41 Q60 26 73 41 L73 36 Q60 25 47 36 Z" fill="${hairC}"/><circle cx="60" cy="27.5" r="4.2" fill="${hairC}"/>`;
+    s += a.hair==='coronet' ? `<rect x="53.5" y="25" width="13" height="4.5" rx="1.5" fill="#d9a441"/>` : `<rect x="56.5" y="25.5" width="7" height="2" rx="1" fill="${acc}"/>`;
+  }else if(a.hair==='band'){ // 두건 (산적)
+    s += `<path d="M47 40 Q60 28 73 40 L73 35 Q60 26 47 35 Z" fill="${hairC}"/><rect x="46.5" y="36" width="27" height="4.5" rx="2" fill="${acc}"/><path d="M73 38 L80 34 L78 42 Z" fill="${acc}"/>`;
+  }else if(a.hair==='helmet'){ // 투구
+    s += `<path d="M46 41 Q60 22 74 41 Z" fill="#7a8494"/><rect x="45" y="39" width="30" height="3.4" rx="1.7" fill="#5a6474"/><circle cx="60" cy="23.5" r="2.4" fill="${acc}"/>`;
+  }else if(a.hair==='hood'){ // 두건/터번
+    s += `<path d="M44 51 Q43 24 60 24 Q77 24 76 51 Q68 42 60 42 Q52 42 44 51 Z" fill="${a.hoodColor||'#1c1a18'}"/>`;
+  }else if(a.hair==='bald'){
+    s += `<path d="M48 39 Q60 30 72 39" stroke="#000" stroke-width="1" opacity=".15" fill="none"/>`;
+  }
+  // 얼굴: 눈가리개 또는 눈매
+  if(a.blind){
+    s += `<rect x="47" y="41" width="26" height="6" rx="2.5" fill="#2a2a30"/>`;
+  }else{
+    s += `<path d="M51 42 L57 43.5 M69 42 L63 43.5" stroke="#3a2a1a" stroke-width="1.6" stroke-linecap="round"/>`;
+    s += `<circle cx="54.5" cy="45.5" r="1.5" fill="#1a1410"/><circle cx="65.5" cy="45.5" r="1.5" fill="#1a1410"/>`;
+  }
+  // 수염
+  if(a.beard) s += `<path d="M51 51 Q60 56 69 51 L68 62 Q60 74 52 62 Z" fill="${a.beard}"/>`;
+  s += `</svg>`;
+  return s;
+}
+
+/* ===== 무공 카드 정의 (슬더스 방식) =====
+   cost=기력 비용, type=attack(공격)/skill(기술)/power(비공·영구)
+   dmg=피해, hits=타격 횟수, block=방어, draw=뽑기, heal=회복,
+   poison=중독, weak=약화, strength=힘, perTurnBlock=매턴 방어
+   up{...}=연마(+) 시 증가량, basic=기본 카드(보상에서 제외) */
+const CARD_DEFS = {
+  // ── 공격 ──
+  strike:   {name:'타격',       cost:1, type:'attack', suit:'gwon', dmg:6,  up:{dmg:3}, basic:true},
+  double:   {name:'연환격',     cost:1, type:'attack', suit:'gwon', dmg:4, hits:2, up:{dmg:2}},
+  sword:    {name:'낙영검법',   cost:1, type:'attack', suit:'geom', dmg:9,  up:{dmg:4}},
+  flick:    {name:'탄지신통',   cost:0, type:'attack', suit:'geom', dmg:4,  up:{dmg:3}},
+  petals:   {name:'만천화우',   cost:1, type:'attack', suit:'geom', dmg:3, hits:3, up:{dmg:1}},
+  palmwave: {name:'벽공장',     cost:1, type:'attack', suit:'jang', dmg:7,  up:{dmg:4}},
+  dragon:   {name:'항룡십팔장', cost:2, type:'attack', suit:'jang', dmg:15, up:{dmg:6}},
+  bone:     {name:'구음백골조', cost:1, type:'attack', suit:'gwon', dmg:5, poison:3, up:{poison:2}},
+  mountain: {name:'파산권',     cost:2, type:'attack', suit:'gwon', dmg:13, up:{dmg:5}},
+  lion:     {name:'사자후',     cost:2, type:'attack', suit:'gi',   dmg:8, weak:2, up:{dmg:4}},
+  yiyang:   {name:'일양지',     cost:3, type:'attack', suit:'gi',   dmg:26, up:{dmg:9}},
+  // ── 기술 (방어·보조) ──
+  defend:   {name:'방어',       cost:1, type:'skill', suit:'gi',   block:5,  up:{block:3}, basic:true},
+  iron:     {name:'철포삼',     cost:1, type:'skill', suit:'gwon', block:8,  up:{block:3}},
+  light:    {name:'경신법',     cost:1, type:'skill', suit:'gi',   block:4, draw:1, up:{block:3}},
+  bell:     {name:'금종조',     cost:2, type:'skill', suit:'gi',   block:14, up:{block:5}},
+  breathe:  {name:'운기조식',   cost:1, type:'skill', suit:'gi',   block:4, heal:3, up:{heal:3}},
+  seal:     {name:'점혈',       cost:0, type:'skill', suit:'jang', weak:1, up:{weak:1}},
+  grip:     {name:'사혈금나수', cost:1, type:'skill', suit:'jang', block:3, weak:2, up:{weak:1}},
+  // ── 비공 (사용 시 전투 내내 지속) ──
+  neigong:  {name:'내공심법',   cost:1, type:'power', suit:'gi', strength:2, up:{strength:1}},
+  guardian: {name:'호체신공',   cost:2, type:'power', suit:'gi', perTurnBlock:3, up:{perTurnBlock:2}},
+};
+// 보상으로 등장하는 카드 (기본 카드 제외)
+const CARD_POOL = Object.keys(CARD_DEFS).filter(k=>!CARD_DEFS[k].basic);
+const TYPE_LABEL = {attack:'공격', skill:'기술', power:'비공'};
+
+/* ===== 연계 시스템 =====
+   같은 문파 카드를 연속으로 쓰면 연계 단계가 쌓인다 (다른 문파를 쓰면 초기화).
+   - 크리티컬: 연속 2장째부터 +15%씩 (피해 2배)
+   - 연계기: 3연속마다 문파 고유 기술이 자동 발동 */
+const CHAIN_ARTS = {
+  gwon: {name:'붕권세',   desc:'적에게 8+힘 피해'},
+  geom: {name:'검기종횡', desc:'적에게 (5+힘) 피해 ×2'},
+  jang: {name:'장풍여파', desc:'적에게 5+힘 피해, 약화 1'},
+  gi:   {name:'기순환',   desc:'기력 +1'},
+};
+// 현재 연계 단계 기준, 다음 같은 문파 카드의 크리티컬 확률(%)
+function critChance(count){
+  let v = Math.max(0, count-1) * 15;
+  if(hasRelic('chwigwon')) v += 10;
+  return Math.min(80, v);
+}
+
+/* ===== 나레이션 장면 일러스트 (SVG) ===== */
+const SCENES = {
+  steppe: `<svg viewBox="0 0 320 140" xmlns="http://www.w3.org/2000/svg">
+    <rect width="320" height="140" fill="#1a1610"/>
+    <circle cx="250" cy="42" r="22" fill="#d9a441" opacity=".9"/>
+    <circle cx="250" cy="42" r="30" fill="none" stroke="#d9a441" opacity=".25"/>
+    <path d="M0 96 Q80 74 160 92 T320 88 L320 140 L0 140 Z" fill="#2a241a"/>
+    <path d="M0 112 Q100 94 200 108 T320 104 L320 140 L0 140 Z" fill="#332b1e"/>
+    <path d="M60 40 q6 -6 12 0 q6 -6 12 0" stroke="#6a5a40" fill="none" stroke-width="2" stroke-linecap="round"/>
+    <path d="M100 56 q5 -5 10 0 q5 -5 10 0" stroke="#6a5a40" fill="none" stroke-width="2" stroke-linecap="round"/>
+    <path d="M40 104 l3 -14 M46 104 l3 -12 M53 104 l2 -13 M60 106 l3 -12" stroke="#4a3f2a" stroke-width="2" stroke-linecap="round"/>
+    <path d="M228 96 a14 9 0 0 1 28 0 Z" fill="#4a3b28"/><rect x="240" y="86" width="4" height="6" fill="#4a3b28"/>
+  </svg>`,
+  island: `<svg viewBox="0 0 320 140" xmlns="http://www.w3.org/2000/svg">
+    <rect width="320" height="140" fill="#141a1c"/>
+    <circle cx="70" cy="36" r="18" fill="#e8ddc8" opacity=".85"/>
+    <path d="M0 104 Q40 98 80 104 T160 104 T240 104 T320 104 L320 140 L0 140 Z" fill="#1d2c30"/>
+    <path d="M0 118 Q50 112 100 118 T200 118 T320 116 L320 140 L0 140 Z" fill="#24363a"/>
+    <path d="M180 104 Q210 66 260 74 Q300 82 320 104 Z" fill="#2a3226"/>
+    <path d="M236 78 q-4 -22 10 -30 q-2 12 4 18 q8 -10 18 -8 q-8 6 -8 14" fill="none" stroke="#3d4a34" stroke-width="5" stroke-linecap="round"/>
+    <g fill="#d98a9a"><circle cx="238" cy="46" r="3"/><circle cx="252" cy="40" r="2.5"/><circle cx="262" cy="52" r="3"/><circle cx="226" cy="58" r="2.5"/><circle cx="270" cy="42" r="2"/><circle cx="204" cy="66" r="2.5"/><circle cx="188" cy="52" r="2"/></g>
+  </svg>`,
+  town: `<svg viewBox="0 0 320 140" xmlns="http://www.w3.org/2000/svg">
+    <rect width="320" height="140" fill="#16130f"/>
+    <circle cx="272" cy="34" r="16" fill="#e8ddc8" opacity=".7"/>
+    <path d="M0 90 L30 90 L38 74 L46 90 L90 90 L98 70 L110 70 L118 90 L160 90 L170 72 L182 72 L190 90 L240 90 L250 74 L262 90 L320 90 L320 140 L0 140 Z" fill="#241e16"/>
+    <path d="M30 90 L46 90 L46 140 L30 140 Z M98 90 L118 90 L118 140 L98 140 Z M170 90 L190 90 L190 140 L170 140 Z" fill="#1c1712"/>
+    <g fill="#c0392b"><circle cx="60" cy="102" r="5"/><circle cx="140" cy="98" r="5"/><circle cx="212" cy="102" r="5"/><circle cx="286" cy="100" r="5"/></g>
+    <g stroke="#8a6a3a" stroke-width="1.4"><path d="M60 96 l0 -8 M140 92 l0 -8 M212 96 l0 -8 M286 94 l0 -8"/></g>
+  </svg>`,
+  river: `<svg viewBox="0 0 320 140" xmlns="http://www.w3.org/2000/svg">
+    <rect width="320" height="140" fill="#12161a"/>
+    <path d="M0 70 Q60 58 120 70 T240 66 T320 70 L320 140 L0 140 Z" fill="#1a2430"/>
+    <g stroke="#2e4050" stroke-width="3" stroke-linecap="round" opacity=".8">
+      <path d="M20 96 h60 M120 104 h80 M230 94 h70 M60 118 h90 M200 122 h60"/>
+    </g>
+    <g opacity=".5" fill="#3a4a58"><ellipse cx="90" cy="64" rx="60" ry="7"/><ellipse cx="240" cy="56" rx="70" ry="8"/></g>
+    <rect x="262" y="26" width="3" height="66" fill="#4a3b28"/>
+    <path d="M265 28 L302 34 L265 46 Z" fill="#7a2e28"/>
+    <path d="M20 108 l4 -18 M28 110 l3 -16 M35 108 l4 -17" stroke="#2c3a30" stroke-width="2" stroke-linecap="round"/>
+  </svg>`,
+  huashan: `<svg viewBox="0 0 320 140" xmlns="http://www.w3.org/2000/svg">
+    <rect width="320" height="140" fill="#100f14"/>
+    <circle cx="60" cy="44" r="20" fill="#c0392b" opacity=".8"/>
+    <path d="M0 140 L44 60 L74 108 L110 30 L150 96 L180 52 L214 108 L250 20 L292 96 L320 70 L320 140 Z" fill="#221e28"/>
+    <path d="M110 30 L150 96 L74 108 Z" fill="#2a2532" opacity=".8"/>
+    <g fill="#e8ddc8" opacity=".2"><ellipse cx="110" cy="88" rx="70" ry="8"/><ellipse cx="240" cy="104" rx="80" ry="9"/></g>
+    <path d="M246 26 L250 20 L254 28" stroke="#3a3444" stroke-width="2" fill="none"/>
+  </svg>`,
+  summit: `<svg viewBox="0 0 320 140" xmlns="http://www.w3.org/2000/svg">
+    <rect width="320" height="140" fill="#171310"/>
+    <circle cx="160" cy="58" r="30" fill="#d9744a" opacity=".85"/>
+    <circle cx="160" cy="58" r="40" fill="none" stroke="#d9744a" opacity=".3"/>
+    <path d="M0 140 L90 70 L160 118 L240 54 L320 140 Z" fill="#241d18"/>
+    <g fill="#e8ddc8" opacity=".18"><ellipse cx="90" cy="102" rx="70" ry="8"/><ellipse cx="250" cy="92" rx="60" ry="7"/></g>
+    <path d="M120 32 q5 -5 10 0 q5 -5 10 0 M200 24 q4 -4 8 0 q4 -4 8 0" stroke="#5a4a38" fill="none" stroke-width="2" stroke-linecap="round"/>
+  </svg>`,
+};
+
+// 비급(유물) 목록 — 슬더스의 유물 역할 (전투 패시브)
+const RELICS = [
+  {id:'hangryong', icon:'🐉', name:'항룡십팔장', price:0,   desc:'전투 시작 시 힘 +1 (공격 피해 +1)'},
+  {id:'dagu',      icon:'🥢', name:'타구봉법',   price:0,   desc:'매 턴 카드를 1장 더 뽑는다'},
+  {id:'gueum',     icon:'📜', name:'구음진경',   price:200, desc:'매 턴 기력 +1'},
+  {id:'ilyang',    icon:'☝️', name:'일양지',     price:150, desc:'전투에서 처음 내는 공격 카드의 피해 2배'},
+  {id:'tanji',     icon:'🫰', name:'탄지신통',   price:110, desc:'턴 종료 시 남은 기력 1당 적에게 3 피해'},
+  {id:'hapma',     icon:'🐸', name:'합마공',     price:110, desc:'전투 시작 시 방어 12'},
+  {id:'gongmyeong',icon:'🌀', name:'공명권',     price:120, desc:'권(拳) 카드의 피해 +3'},
+  {id:'baekgol',   icon:'💀', name:'구음백골조 비급', price:120, desc:'중독을 걸 때마다 +2 추가'},
+  {id:'jwau',      icon:'🙌', name:'좌우호박술', price:140, desc:'첫 턴에 카드 2장 추가로 뽑는다'},
+  {id:'yeonwi',    icon:'🦔', name:'연위갑',     price:130, desc:'매 턴 시작 시 방어 +3'},
+  {id:'jukbong',   icon:'🎋', name:'개방 죽봉',  price:100, desc:'전투 승리 시 골드 +15'},
+  {id:'dohwa',     icon:'🌸', name:'도화도 진법', price:130, desc:'기술 카드의 방어 +2'},
+  {id:'youngyak',  icon:'🍶', name:'서역 영약',  price:100, desc:'전투 승리 시 체력 6 회복'},
+  {id:'byeokhae',  icon:'🎼', name:'벽해조생곡', price:120, desc:'턴 종료 시 적에게 4 피해'},
+  {id:'mancheon',  icon:'🌧️', name:'만천화우 비결', price:130, desc:'다단히트 공격의 타격 횟수 +1'},
+  {id:'mumok',     icon:'📕', name:'무목유서',   price:150, desc:'힘을 얻을 때 +1 추가'},
+  {id:'wolnyeo',   icon:'🗡️', name:'월녀검법',   price:120, desc:'검(劍) 카드의 피해 +3'},
+  {id:'guhwa',     icon:'💊', name:'구화옥로환', price:130, desc:'매 턴 시작 시 체력 2 회복'},
+  {id:'singung',   icon:'🏹', name:'진우의 철궁', price:110, desc:'전투 시작 시 적에게 15 피해'},
+  {id:'chwigwon',  icon:'🍺', name:'취팔선권',   price:130, desc:'크리티컬 확률 +10%'},
+  {id:'okbong',    icon:'🐝', name:'옥봉침',     price:120, desc:'크리티컬 시 적에게 중독 2'},
+  {id:'chonggang', icon:'⚡', name:'구음총강편', price:160, desc:'크리티컬 피해 2배 → 2.5배'},
+  {id:'jinjin',    icon:'☯', name:'전진검진',   price:170, desc:'연계기가 3연속 → 2연속마다 발동'},
+  {id:'dokjil',    icon:'🌵', name:'독질려',     price:110, desc:'전투 시작 시 적에게 중독 4'},
+  {id:'shinhaeng', icon:'👣', name:'신행백변',   price:120, desc:'첫 턴 기력 +1'},
+  {id:'hancheol',  icon:'🧤', name:'한철 호완',  price:100, desc:'획득 즉시 최대 체력 +10'},
+  {id:'sulga',     icon:'🏺', name:'보은의 술도가', price:140, desc:'전투 승리 시 최대 체력 +2'},
+];
+
+// 플레이어블 캐릭터 — 슬더스식 캐릭터 선택 (시작 덱 포함)
+const CHARACTERS = [
+  {
+    id:'jinwoo', face:'🧑‍🦱', name:'진우', title:'우직한 초원의 아이',
+    hp:90, gold:80, relic:'hangryong',
+    deck:['strike','strike','strike','strike','strike','defend','defend','defend','defend','dragon'],
+    desc:'몽골 초원에서 자란 우직한 청년.\n항룡십팔장 한 수로 묵직하게 시작한다.',
+  },
+  {
+    id:'sunwoo', face:'👧', name:'선우', title:'도화도의 영리한 소녀',
+    hp:70, gold:150, relic:'dagu',
+    deck:['strike','strike','strike','strike','defend','defend','defend','defend','flick','light'],
+    desc:'도화도주의 딸, 개방의 후계자.\n가볍고 빠른 패 돌림으로 상대를 농락한다.',
+  },
+];
+
+// 막(Act) 구성 — 슬더스식 3막 구조, 영웅문 스토리 순서
+const ACTS = [
+  {
+    name:'제1막 — 중원 입문', sub:'강남에서 강호에 첫발을 딛다',
+    pool:[
+      {face:'🗡️', name:'산적',        hp:32, moves:[{t:'atk',v:7},{t:'atk',v:9}],
+       art:{robe:'#5a4632', hair:'band', hairColor:'#33291f', weapon:'dao', acc:'#a04030'}},
+      {face:'🛡️', name:'금국 병사',   hp:44, moves:[{t:'atk',v:8},{t:'def',v:6},{t:'atk',v:10}],
+       art:{robe:'#556070', hair:'helmet', weapon:'spear', acc:'#d9a441'}},
+      {face:'🌑', name:'흑풍채 자객', hp:38, moves:[{t:'atk',v:12},{t:'def',v:5}],
+       art:{robe:'#26221e', hair:'hood', weapon:'daggers', acc:'#7a8494', skin:'#d8b890'}},
+    ],
+    elite:{face:'🦇', name:'진현풍 · 흑풍쌍살', hp:85, moves:[{t:'atk',v:12},{t:'atk',v:14},{t:'buff',v:3}],
+       art:{robe:'#3a2a44', hair:'long', hairColor:'#2a2530', weapon:'claw', acc:'#8a5aa0', aura:'#8a5aa0'}},
+    boss:{face:'👻', name:'매초풍 · 구음백골조', hp:150, moves:[{t:'atk',v:12},{t:'def',v:10},{t:'atk',v:16},{t:'atk',v:20}],
+       art:{robe:'#2e2431', hair:'long', hairColor:'#d8d8de', blind:true, weapon:'claw', acc:'#c04a5a', aura:'#c04a5a', skin:'#e8d8c8'}},
+    bossIntro:'구음백골조를 익힌 철시 매초풍이 앞을 막는다.',
+  },
+  {
+    name:'제2막 — 철장방의 그림자', sub:'강남 하늘 아래, 음모가 깊어진다',
+    pool:[
+      {face:'🥋', name:'철장방 무사', hp:60, moves:[{t:'atk',v:12},{t:'atk',v:14},{t:'def',v:8}],
+       art:{robe:'#3e5248', hair:'topknot', weapon:'palm', acc:'#9aa4ae'}},
+      {face:'🏹', name:'서역 검객',   hp:70, moves:[{t:'atk',v:15},{t:'def',v:10},{t:'atk',v:17}],
+       art:{robe:'#8a6a42', hair:'hood', hoodColor:'#c8a86a', weapon:'dao', acc:'#5a8a8a', skin:'#c8a078'}},
+      {face:'🐎', name:'완안부 호위', hp:65, moves:[{t:'buff',v:3},{t:'atk',v:13},{t:'atk',v:15}],
+       art:{robe:'#6a4a2a', hair:'helmet', weapon:'jian', acc:'#d9a441'}},
+    ],
+    elite:{face:'🎭', name:'양강 · 배신의 왕자', hp:130, moves:[{t:'atk',v:16},{t:'def',v:12},{t:'atk',v:20},{t:'buff',v:4}],
+       art:{robe:'#7a3a4a', hair:'coronet', weapon:'fan', acc:'#d9a441', aura:'#d9a441'}},
+    boss:{face:'🌊', name:'구천인 · 철장수상표', hp:230, moves:[{t:'atk',v:16},{t:'atk',v:20},{t:'def',v:15},{t:'atk',v:26}],
+       art:{robe:'#4a4a58', hair:'bald', beard:'#c8c8c8', weapon:'palm', acc:'#8a94a4', aura:'#8a94a4', skin:'#d8c0a0'}},
+    bossIntro:'철장방 방주 구천인, 물 위를 달리는 자가 장풍을 뻗는다.',
+  },
+  {
+    name:'제3막 — 화산논검', sub:'천하제일을 가리는 마지막 비무',
+    pool:[
+      {face:'⛰️', name:'화산 검수',   hp:90,  moves:[{t:'atk',v:18},{t:'def',v:14},{t:'atk',v:22}],
+       art:{robe:'#3a4a6a', hair:'topknot', weapon:'jian', acc:'#6ea8dc'}},
+      {face:'🏔️', name:'백타산 고수', hp:100, moves:[{t:'atk',v:20},{t:'buff',v:4},{t:'atk',v:24}],
+       art:{robe:'#8a8474', hair:'hood', hoodColor:'#ded8c8', weapon:'palm', acc:'#c8b890', skin:'#c8a078'}},
+    ],
+    elite:{face:'🐍', name:'구양극 · 백타산 소주', hp:170, moves:[{t:'atk',v:22},{t:'def',v:16},{t:'atk',v:26},{t:'buff',v:5}],
+       art:{robe:'#4a5a3a', hair:'coronet', weapon:'staffsnake', acc:'#7fae6a', aura:'#9a8a4a'}},
+    boss:{face:'🐸', name:'구양봉 · 서독', hp:320, moves:[{t:'atk',v:20},{t:'def',v:20},{t:'atk',v:26},{t:'buff',v:5},{t:'atk',v:34}],
+       art:{robe:'#3a5a3a', hair:'wild', hairColor:'#e4e4e4', beard:'#dedede', weapon:'staffsnake', acc:'#7fae6a', aura:'#7fae6a', skin:'#d8c0a0'}},
+    bossIntro:'화산 정상. 서독 구양봉이 합마공을 일으킨다. 화산논검의 마지막 상대!',
+  },
+];
+
+// 기연(이벤트) 목록 — 영웅문의 명장면들
+const EVENTS = [
+  {
+    id:'zhoubotong', art:'👴', title:'노완동 주백통',
+    text:'"심심하던 차에 잘 왔다! 내 좌우호박술의 묘리를 보여주지. 네 초식 하나를 똑같이 베껴주마."',
+    choices:[
+      {label:'초식 하나를 복제한다', act:'dupCard'},
+      {label:'정중히 사양한다', act:'skip'},
+    ],
+  },
+  {
+    id:'hongqigong', art:'🍗', title:'홍칠공과 규화계',
+    text:'거지 행색의 노인이 닭 냄새에 이끌려 나타났다. 구지신개 홍칠공! 정성껏 대접하면 한 수 배울 수 있을지도.',
+    choices:[
+      {label:'요리를 대접한다 (최대 체력 +8, 체력 8 회복)', act:'maxhp'},
+      {label:'무공을 청한다 (무작위 비급 획득)', act:'relic'},
+    ],
+  },
+  {
+    id:'huangyaoshi', art:'🎼', title:'황약사의 시험',
+    text:'도화도주 황약사가 옥퉁소를 불며 심법을 시험한다. "내 곡조를 버텨내면 상을 주지. 흐트러지면… 대가를 치른다."',
+    choices:[
+      {label:'시험에 응한다 (50%: 비급 / 50%: 체력 -12)', act:'gamble'},
+      {label:'조용히 물러난다', act:'skip'},
+    ],
+  },
+  {
+    id:'merchant', art:'🧳', title:'떠돌이 보부상',
+    text:'"어이 협객 양반, 좋은 물건 있소. 아니면… 그 어설픈 초식, 내가 사줄 수도 있고?"',
+    choices:[
+      {label:'품삯을 받는다 (골드 +40)', act:'gold'},
+      {label:'초식 하나를 판다 (카드 1장 제거)', act:'removeCard'},
+    ],
+  },
+  {
+    id:'stele', art:'🪨', title:'무너진 비석',
+    text:'이끼 낀 비석에 옛 고수의 검결이 새겨져 있다. 손끝으로 획을 따라가자 초식의 묘리가 몸에 스며든다.',
+    choices:[
+      {label:'검결을 연구한다 (무작위 카드 2장 연마)', act:'upgrade2'},
+      {label:'지나친다', act:'skip'},
+    ],
+  },
+];
+
+/* ===== 스토리 & 나레이션 =====
+   페이지 형식: {h:제목, body:'줄바꿈(\n)으로 나뉜 문단들'}
+   본문의 {HERO}는 주인공 이름으로 치환된다. 대사는 <span class="who">로 표시 */
+const STORY = {
+  // 캐릭터별 프롤로그 (2페이지, 장면 일러스트 포함)
+  prologue: {
+    jinwoo: [
+      {h:'서장 — 초원의 아이', img:'steppe', body:
+`몽골의 바람은 거칠었다.
+아비는 그가 태어나기도 전에 금국의 음모 속에 스러졌다. 어미의 손에서, 소년은 초원의 늑대처럼 자랐다.
+강남칠괴 — 일곱 괴짜 사부가 소년에게 무공과 의리를 가르쳤다.
+<span class="who">가진악</span> "아둔해도 좋다. 다만, 포기하지 마라."`},
+      {h:'', img:'steppe', body:
+`열여덟 해가 흘러 사부들이 말했다.
+<span class="who">주총</span> "중원으로 가거라. 아비의 원수를 밝히고… 화산에서 열리는 논검(論劍)을 네 눈으로 보아라."
+소년 진우는 철궁 하나, 우직한 주먹 하나로 강호에 첫발을 딛는다.
+싸울수록 손패는 두터워지고, 무공은 깊어질 것이다.`},
+    ],
+    sunwoo: [
+      {h:'서장 — 도화도의 바람', img:'island', body:
+`동해 도화도. 복사꽃이 지지 않는 섬에서 소녀는 자랐다.
+아버지는 동사(東邪) 황약사 — 천하가 두려워하는 도화도주.
+사소한 말다툼 끝에 소녀는 배를 훔쳐 타고 섬을 나왔다. 거지꼴로 변장했지만, 세상 무서운 줄은 모른다.`},
+      {h:'', img:'island', body:
+`<span class="who">선우</span> "아버지가 그러셨지. 천하의 고수는 다섯뿐이라고. 그럼… 여섯 번째 자리는 비어 있겠네?"
+소녀는 웃으며 대나무 막대를 빙글 돌렸다.
+목표는 화산논검. 가는 길의 시비는 — 전부 받아준다.`},
+    ],
+  },
+  // 각 막 도입 나레이션 (1페이지씩)
+  actIntro: [
+    {h:'제1막 — 중원 입문', img:'town', body:
+`강남의 저잣거리. 금국의 세작이 활개 치고, 관은 눈을 감았다.
+밤이면 '흑풍쌍살'의 소문이 아이들의 울음을 그치게 한다. 무덤가에서 사람 뼈가 사라진다고 했다.
+무너진 강호의 질서 — 협(俠)이 설 자리는 스스로 만들어야 한다.`},
+    {h:'제2막 — 철장방의 그림자', img:'river', body:
+`남쪽으로. 상강(湘江)의 물안개 너머 철장방의 깃발이 나부낀다.
+방주 구천인은 '철장수상표' — 물 위를 달린다는 자. 금국과 손잡고 강호를 팔아넘길 음모가 무르익고 있다.
+그 곁에서, 배신의 왕자 양강이 웃고 있다.`},
+    {h:'제3막 — 화산논검', img:'huashan', body:
+`화산. 다섯 봉우리가 구름을 뚫고 하늘에 검처럼 꽂혀 있다.
+동사 황약사, 북개 홍칠공, 남제 일등대사… 천하의 고수들이 하나둘 모여드는 자리.
+그러나 정상에서 기다리는 것은 서독(西毒) — 독보다 지독한 야심이다.`},
+  ],
+  // 보스 전 대화 (막마다 1페이지, img:'boss'는 보스 초상으로 대체)
+  bossPre: [
+    {h:'흑풍의 밤', img:'boss', body:
+`달빛 아래, 은빛 머리카락이 바람에 흩날린다. 눈먼 여인이 무덤 위에 앉아 있다.
+<span class="who villain">매초풍</span> "…발소리가 젊구나. 뼈가 단단하겠어."
+<span class="who villain">매초풍</span> "구음백골조가 완성되려면 아직 두개골 마흔아홉이 모자라다. 네 것을 보태거라."
+<span class="who">{HERO}</span> "무고한 이의 뼈는 못 드립니다. 초식으로 받으시지요!"`},
+    {h:'철장봉 정상', img:'boss', body:
+`늙은 방주가 천천히 손바닥을 편다. 쇳빛 굳은살이 등불에 번들거린다.
+<span class="who villain">구천인</span> "여기까지 오른 것은 칭찬하마. 허나 철장(鐵掌) 아래 온전히 남은 뼈는 없었다."
+<span class="who">{HERO}</span> "협을 팔아 부귀를 사는 자 — 그 손바닥, 오늘 접게 해드리지요."`},
+    {h:'정상 — 최후의 비무', img:'boss', body:
+`흰 뱀 지팡이를 짚은 노인이 웅크린 개구리처럼 몸을 낮춘다. 합마공(蛤蟆功)이다.
+<span class="who villain">구양봉</span> "구음진경도, 천하제일의 이름도, 전부 이 구양봉의 것이다."
+<span class="who villain">구양봉</span> "꼬마야, 마지막으로 묻지. 비급을 내놓겠느냐, 뼈를 내놓겠느냐?"
+<span class="who">{HERO}</span> "천하제일은 힘이 아니라 협(俠)이 정하는 것 — 갑니다!"`},
+  ],
+  // 보스 격파 후 이야기 (1·2막만, 3막은 엔딩으로)
+  bossPost: [
+    {h:'', body:
+`매초풍은 피를 토하며 어둠 속으로 사라졌다.
+<span class="who villain">매초풍</span> "구음진경… 그 반쪽이 세상에 나돌고 있다. 너도 결국… 그것을 탐하게 될 것이다…"
+구음진경 — 천하 무학의 정점이 담긴 비급. 강호가 다시 술렁이기 시작한다.`},
+    {h:'', body:
+`구천인이 무릎을 꿇자 철장방의 깃발이 내려갔다. 품에서 나온 밀서에는 금국의 옥새가 찍혀 있었다.
+그리고 한 장의 초대장.
+<span class="who">초대장</span> "화산논검(華山論劍) — 천하제일을 가리는 자리에 그대를 청한다."`},
+  ],
+  // 최종 보스 격파 후 엔딩 나레이션
+  ending: [
+    {h:'종장 — 바람이 멎은 봉우리', img:'summit', body:
+`합마공이 무너진다. 구양봉은 하늘을 우러러 크게 웃더니, 미친 사람처럼 산 아래로 사라졌다.
+봉우리에 남은 것은 바람과, 말없이 포권하는 고수들.
+<span class="who">홍칠공</span> "천하제일이라… 그 이름은 무겁다. 짊어지겠느냐, {HERO}?"
+그대는 대답 대신, 지는 해를 향해 천천히 포권했다.`},
+  ],
+};
+
+/* ===== 게임 상태 ===== */
+let G = null; // 전체 게임 상태 (새 게임 시작 시 초기화)
+
+// 새 게임 상태 생성
+function newGame(charId){
+  const ch = CHARACTERS.find(c=>c.id===charId);
+  const deck = [];
+  let uid = 0;
+  // 시작 덱: 캐릭터별 무공 카드 구성 (슬더스 방식 — 카드 하나가 기술 하나)
+  for(const key of ch.deck){
+    deck.push({id:uid++, key, up:0});
+  }
+  G = {
+    char:ch, hp:ch.hp, maxHp:ch.hp, gold:ch.gold,
+    relics:[ch.relic],
+    deck, nextCardId:uid,
+    act:0, floor:0, floors:genAct(),
+    combat:null,
+    screen:'map',
+  };
+}
+
+function hasRelic(id){ return G.relics.includes(id); }
+function relicInfo(id){ return RELICS.find(r=>r.id===id); }
+// 비급 획득 공통 처리 — 획득 즉시 효과가 있는 비급은 여기서 적용
+function gainRelic(id){
+  G.relics.push(id);
+  if(id==='hancheol'){ G.maxHp += 10; G.hp += 10; } // 한철 호완
+}
+
+/* ===== 지도 생성 (슬더스식) ===== */
+// 8층 구조: 1층 전투 고정, 7층 객잔/상점, 8층 보스, 중간층은 무작위 2~3개 선택지
+function genAct(){
+  const floors = [];
+  for(let f=1; f<=8; f++){
+    let opts;
+    if(f===1) opts = ['fight','fight'];
+    else if(f===7) opts = ['rest','shop'];
+    else if(f===8) opts = ['boss'];
+    else{
+      opts = [];
+      const n = Math.random()<0.5 ? 2 : 3;
+      for(let i=0;i<n;i++){
+        const r = Math.random();
+        let t = r<0.45?'fight': r<0.6?'elite': r<0.78?'event': r<0.9?'shop':'rest';
+        // 한 층에 정예는 최대 1개 — 도망갈 길은 항상 남겨둔다
+        if(t==='elite' && opts.includes('elite')) t = 'fight';
+        opts.push(t);
+      }
+    }
+    floors.push(opts);
+  }
+  // 3~6층 사이에 정예가 하나도 없으면 하나 강제 배치 (보상 흐름 보장)
+  const hasElite = floors.slice(2,6).some(fl=>fl.includes('elite'));
+  if(!hasElite){
+    const f = 2 + Math.floor(Math.random()*4);
+    floors[f][0] = 'elite';
+  }
+  return floors;
+}
+
+const NODE_META = {
+  fight:{icon:'⚔️', label:'전투'},
+  elite:{icon:'💀', label:'정예'},
+  event:{icon:'🏮', label:'기연'},
+  rest:{icon:'⛺', label:'객잔'},
+  shop:{icon:'💰', label:'저잣거리'},
+  boss:{icon:'👑', label:'보스'},
+};
+
+/* ===== 유틸 ===== */
+function shuffle(arr){
+  const a = arr.slice();
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]] = [a[j],a[i]];
+  }
+  return a;
+}
+function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+function esc(s){ return String(s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+/* ===== 카드 수치 계산 (슬더스 방식) ===== */
+// 공격 피해: 기본 + 연마 + 문파 비급 + 힘
+function cardDmg(card){
+  const d = CARD_DEFS[card.key];
+  let v = (d.dmg||0) + (card.up ? (d.up.dmg||0) : 0);
+  if(hasRelic('gongmyeong') && d.suit==='gwon') v += 3;
+  if(hasRelic('wolnyeo') && d.suit==='geom') v += 3;
+  if(G.combat) v += G.combat.strength;
+  return v;
+}
+// 방어: 기본 + 연마 + 도화도 진법
+function cardBlock(card){
+  const d = CARD_DEFS[card.key];
+  let v = (d.block||0) + (card.up ? (d.up.block||0) : 0);
+  if(hasRelic('dohwa') && d.type==='skill') v += 2;
+  return v;
+}
+// 타격 횟수 (만천화우 비결: 다단히트 +1)
+function cardHits(card){
+  const d = CARD_DEFS[card.key];
+  let h = d.hits || 1;
+  if(h>1 && hasRelic('mancheon')) h++;
+  return h;
+}
+// 중독/약화/회복/힘 등 공통 수치
+function cardVal(card, field){
+  const d = CARD_DEFS[card.key];
+  let v = (d[field]||0) + (card.up ? (d.up[field]||0) : 0);
+  if(field==='poison' && v>0 && hasRelic('baekgol')) v += 2;
+  if(field==='strength' && v>0 && hasRelic('mumok')) v += 1;
+  return v;
+}
+// 카드 설명 텍스트 (현재 보정치 반영)
+function cardDesc(card){
+  const d = CARD_DEFS[card.key];
+  const parts = [];
+  if(d.dmg) parts.push(`피해 <b>${cardDmg(card)}</b>${cardHits(card)>1?` ×${cardHits(card)}`:''}`);
+  if(d.block) parts.push(`방어 <b>${cardBlock(card)}</b>`);
+  if(d.draw) parts.push(`카드 ${d.draw}장 뽑기`);
+  if(d.heal) parts.push(`체력 ${cardVal(card,'heal')} 회복`);
+  if(d.poison) parts.push(`중독 <b>${cardVal(card,'poison')}</b>`);
+  if(d.weak) parts.push(`약화 <b>${cardVal(card,'weak')}</b>`);
+  if(d.strength) parts.push(`힘 +${cardVal(card,'strength')} (영구)`);
+  if(d.perTurnBlock) parts.push(`매 턴 방어 +${cardVal(card,'perTurnBlock')}`);
+  return parts.join('<br>');
+}
+// 적에게 피해 적용 (방어 먼저 소모), 실제 들어간 피해를 돌려준다
+function dealToEnemy(amount){
+  const e = G.combat.enemy;
+  let dmg = amount;
+  if(e.block>0){
+    const ab = Math.min(e.block, dmg);
+    e.block -= ab; dmg -= ab;
+  }
+  e.hp = Math.max(0, e.hp - dmg);
+  return dmg;
+}
+
+/* ===== 전투 ===== */
+function startCombat(enemyDef, kind){
+  const enemy = {
+    face:enemyDef.face, name:enemyDef.name,
+    art:enemyDef.art, // SVG 초상 설정
+    hp:enemyDef.hp, maxHp:enemyDef.hp,
+    moves:enemyDef.moves, moveIdx:0,
+    block:0, atkBonus:0,
+    poison:0, weak:0, // 상태이상
+  };
+  G.combat = {
+    kind, // 'fight' | 'elite' | 'boss'
+    enemy,
+    drawPile:shuffle(G.deck.map(c=>({...c}))), // 전투용 사본 덱
+    hand:[], discardPile:[],
+    energy:0, maxEnergy:3 + (hasRelic('gueum')?1:0), // 기력 (구음진경 +1)
+    block:0,
+    strength: hasRelic('hangryong') ? 1 : 0, // 힘 (항룡십팔장 비급)
+    perTurnBlock:0,   // 호체신공 누적
+    turn:0,
+    firstAtkDone:false, // 일양지 (첫 공격 2배) 사용 여부
+    chainSuit:null, chainCount:0, // 연계: 마지막 문파 / 연속 횟수
+    busy:false,         // 연출 재생 중 입력 잠금
+    log: kind==='boss' ? ACTS[G.act].bossIntro : `${enemy.name}이(가) 길을 막는다!`,
+  };
+  // 진우의 철궁 — 전투 시작과 동시에 화살 한 발
+  if(hasRelic('singung')){
+    enemy.hp = Math.max(1, enemy.hp - 15);
+    G.combat.log += ' 🏹 철궁이 먼저 울었다! (15 피해)';
+  }
+  // 독질려 — 전투 시작 시 중독 살포
+  if(hasRelic('dokjil')){
+    enemy.poison = 4;
+    G.combat.log += ' 🌵 독질려가 흩뿌려졌다! (중독 4)';
+  }
+  startPlayerTurn();
+  G.screen='combat';
+  render();
+  // 처음 플레이하는 사람에게 첫 전투에서 가이드를 한 번 보여준다
+  if(kind==='fight' && !storageGet('hg_guide_seen')){
+    storageSet('hg_guide_seen','1');
+    setTimeout(showGuide, 400);
+  }
+}
+
+// n장 뽑기 (덱이 비면 버림 더미를 섞어 재사용)
+function drawCards(n){
+  const c = G.combat;
+  for(let i=0;i<n;i++){
+    if(!c.drawPile.length){
+      if(!c.discardPile.length) break;
+      c.drawPile = shuffle(c.discardPile);
+      c.discardPile = [];
+    }
+    c.hand.push(c.drawPile.pop());
+  }
+}
+
+// 새 턴 시작 — 기력 회복, 방어 재설정, 카드 뽑기 (슬더스 방식)
+function startPlayerTurn(){
+  const c = G.combat;
+  c.turn++;
+  c.energy = c.maxEnergy + (c.turn===1 && hasRelic('shinhaeng') ? 1 : 0); // 신행백변: 첫 턴 기력 +1
+  // 방어는 매 턴 초기화. 호체신공/연위갑/합마공 보너스만 얹고 시작
+  c.block = c.perTurnBlock
+    + (hasRelic('yeonwi') ? 3 : 0)
+    + (c.turn===1 && hasRelic('hapma') ? 12 : 0);
+  if(hasRelic('guhwa')) G.hp = Math.min(G.maxHp, G.hp + 2); // 구화옥로환
+  drawCards(5 + (hasRelic('dagu')?1:0) + (c.turn===1 && hasRelic('jwau')?2:0));
+}
+
+// 카드 사용 — 기력을 소모해 즉시 발동 (슬더스 방식)
+function playCard(id){
+  const c = G.combat;
+  if(!c || c.busy) return;
+  const card = c.hand.find(h=>h.id===id);
+  if(!card) return;
+  const d = CARD_DEFS[card.key];
+  if(c.energy < d.cost){
+    c.log = '⚡ 기력이 부족하다!';
+    render();
+    return;
+  }
+  c.busy = true;
+  sfx('card'); // 카드 내는 소리
+  // 카드 비행 연출
+  const el = document.querySelector(`[data-cid="${id}"]`);
+  if(el) el.classList.add('fly');
+  setTimeout(()=>{
+    if(G.combat!==c) return;
+    const e = c.enemy;
+    c.energy -= d.cost;
+    // 손에서 제거 (비공은 전투 동안 지속되므로 소멸, 나머지는 버림 더미로)
+    const idx = c.hand.findIndex(h=>h.id===id);
+    if(idx>=0) c.hand.splice(idx,1);
+    if(d.type!=='power') c.discardPile.push(card);
+    const logs = [];
+    let atkShown = 0;
+    let isCrit = false;
+    let chainArt = null;
+    // ── 연계 판정: 같은 문파 연속이면 단계 상승, 아니면 새로 시작 ──
+    if(c.chainSuit === d.suit) c.chainCount++;
+    else { c.chainSuit = d.suit; c.chainCount = 1; }
+    // ── 공격 효과 ──
+    if(d.dmg){
+      let per = cardDmg(card);
+      if(hasRelic('ilyang') && !c.firstAtkDone){ per *= 2; logs.push('☝️ 일양지 개안 — 피해 2배!'); }
+      c.firstAtkDone = true;
+      // 크리티컬: 연계 단계가 높을수록 확률 상승 (2연속째부터 +15%씩)
+      const chance = critChance(c.chainCount);
+      if(chance > 0 && Math.random()*100 < chance){
+        isCrit = true;
+        per = Math.floor(per * (hasRelic('chonggang') ? 2.5 : 2));
+        logs.push(`💥 <b class="red">회심의 일격!</b> (${chance}%)`);
+        if(hasRelic('okbong')){ e.poison += 2; logs.push('🐝 옥봉침 — 중독 2'); }
+      }
+      const hits = cardHits(card);
+      for(let i=0;i<hits;i++) dealToEnemy(per);
+      atkShown = per;
+      logs.push(`피해 <b class="gold">${per}${hits>1?'×'+hits:''}</b>`);
+      c.enemyHit = true;
+    }
+    // ── 연계기: 같은 문파 3연속(전진검진 보유 시 2연속)마다 자동 발동 ──
+    const chainNeed = hasRelic('jinjin') ? 2 : 3;
+    if(c.chainCount >= chainNeed && c.chainCount % chainNeed === 0 && e.hp > 0){
+      chainArt = CHAIN_ARTS[d.suit];
+      if(d.suit==='gwon'){ dealToEnemy(8 + c.strength); }
+      else if(d.suit==='geom'){ dealToEnemy(5 + c.strength); dealToEnemy(5 + c.strength); }
+      else if(d.suit==='jang'){ dealToEnemy(5 + c.strength); e.weak += 1; }
+      else { c.energy += 1; }
+      logs.push(`🔗 연계기 【<b class="gold">${chainArt.name}</b>】`);
+      if(d.suit!=='gi') c.enemyHit = true;
+    }
+    // ── 방어·보조 효과 ──
+    if(d.block){ const b = cardBlock(card); c.block += b; logs.push(`🛡️ 방어 +${b}`); }
+    if(d.heal){ const h = cardVal(card,'heal'); G.hp = Math.min(G.maxHp, G.hp+h); logs.push(`💚 회복 ${h}`); }
+    if(d.poison){ const p = cardVal(card,'poison'); e.poison += p; logs.push(`☠️ 중독 ${p}`); }
+    if(d.weak){ const w = cardVal(card,'weak'); e.weak += w; logs.push(`💫 약화 ${w}`); }
+    if(d.strength){ const s = cardVal(card,'strength'); c.strength += s; logs.push(`💪 힘 +${s}`); }
+    if(d.perTurnBlock){ const pb = cardVal(card,'perTurnBlock'); c.perTurnBlock += pb; logs.push(`🛡️ 매 턴 방어 +${pb}`); }
+    if(d.draw) drawCards(d.draw);
+    c.log = `${d.name}${card.up?'+':''} — ` + logs.join(' · ');
+    render();
+    // 효과음: 공격은 문파별 타격음(크리티컬은 전용음), 방어·중독·연계기도 각각
+    if(d.dmg) sfx(isCrit ? 'crit' : d.suit);
+    else if(d.block) sfx('guard');
+    else if(d.poison || d.weak) sfx('poison');
+    else sfx('gi');
+    if(d.dmg && d.block) sfx('guard');
+    if(chainArt) sfx('chain');
+    // 연출: 크리티컬 > 연계기 > 큰 기술 순으로 스플래시, 공격은 문파별 이펙트
+    if(isCrit) fxSplash('회심의 일격!');
+    else if(chainArt) fxSplash(chainArt.name, '연계기');
+    else if(d.cost>=2) fxSplash(d.name);
+    const er = rectOf('.enemy-face');
+    if(er){
+      const ex = er.left + er.width/2, ey = er.top + er.height/2;
+      if(d.dmg){
+        fxImpact(d.suit, ex, ey);
+        fxFloat(ex, er.top, atkShown*cardHits(card), isCrit ? '#ff5a40' : 'var(--gold)', isCrit ? 44 : 34);
+        if(isCrit) fxShake();
+      }
+      if(chainArt && d.suit!=='gi'){ fxRing(ex, ey, SUIT_FX[d.suit], 120); fxFloat(ex, ey+26, '연계 '+chainArt.name, SUIT_FX[d.suit], 18); }
+      if(chainArt && d.suit==='gi') fxFloat(ex, ey, '⚡ 기순환 +1', SUIT_FX.gi, 22);
+      if(d.poison) fxFloat(ex+40, ey, '☠️', '#9acd6a', 24);
+      if(d.weak) fxFloat(ex-40, ey, '💫', '#c8a0e0', 24);
+    }
+    if(d.block){
+      const hz = rectOf('.hand-zone');
+      if(hz) fxGuard(hz.left + hz.width/2, hz.top, cardBlock(card));
+    }
+    // 적 격파 시: KO 연출 후 승리
+    if(e.hp<=0){
+      const ef = document.querySelector('.enemy-face');
+      if(ef) ef.classList.add('ko');
+      setTimeout(()=>{ if(G.combat===c) winCombat(); }, 700);
+      return;
+    }
+    setTimeout(()=>{
+      if(G.combat!==c) return;
+      c.enemyHit = false;
+      c.busy = false;
+      render();
+    }, d.dmg ? 340 : 140);
+  }, 250);
+}
+
+// 턴 종료 — 비급 여운 정산 → 손 버리기 → 적 행동 → 새 턴
+function endTurn(){
+  const c = G.combat;
+  if(!c || c.busy) return;
+  c.busy = true;
+  const e = c.enemy;
+  // 탄지신통(남은 기력×3) / 벽해조생곡(4) — 턴 종료 여운 피해
+  let bonus = 0;
+  if(hasRelic('tanji') && c.energy>0) bonus += c.energy*3;
+  if(hasRelic('byeokhae')) bonus += 4;
+  if(bonus>0){
+    dealToEnemy(bonus);
+    const er = rectOf('.enemy-face');
+    if(er){ fxRing(er.left+er.width/2, er.top+er.height/2, SUIT_FX.gi, 0); fxFloat(er.left+er.width/2, er.top, bonus, 'var(--gi)', 24); }
+  }
+  if(e.hp<=0){
+    c.log = '🎯 여운의 일격이 적을 쓰러뜨렸다!';
+    render();
+    const ef = document.querySelector('.enemy-face');
+    if(ef) ef.classList.add('ko');
+    setTimeout(()=>{ if(G.combat===c) winCombat(); }, 700);
+    return;
+  }
+  // 손패 전부 버림
+  c.discardPile.push(...c.hand);
+  c.hand = [];
+  c.log = bonus>0 ? `🎯 여운 피해 ${bonus}` : `${c.turn}번째 합 종료.`;
+  render();
+  // 적 행동 연출 (공격이면 돌진)
+  const mv = e.moves[e.moveIdx % e.moves.length];
+  const ef = document.querySelector('.enemy-face');
+  if(mv.t==='atk' && ef) ef.classList.add('lunge');
+  setTimeout(()=>{
+    if(G.combat!==c) return;
+    const res = enemyTurn();
+    if(res.win){ // 중독이 적을 쓰러뜨림
+      render();
+      const ef2 = document.querySelector('.enemy-face');
+      if(ef2) ef2.classList.add('ko');
+      setTimeout(()=>{ if(G.combat===c) winCombat(); }, 700);
+      return;
+    }
+    if(G.screen==='gameover'){ sfx('lose'); render(); return; }
+    // 피격 연출: 화면 흔들림 + 붉은 섬광 + 피해 숫자 + 방어 성공 기막 + 효과음
+    if(res.mv && res.mv.t==='atk'){
+      if(res.dealt>0){ fxShake(); fxVignette(); sfx('hurt'); }
+      else if(res.absorbed>0) sfx('guard');
+      const hr = rectOf('#hud-hp');
+      if(hr && res.dealt>0) fxFloat(hr.left+hr.width/2, hr.top, '-'+res.dealt, '#e06050', 26);
+      if(res.absorbed>0){
+        const hz = rectOf('.hand-zone');
+        if(hz) fxGuardHit(hz.left+hz.width/2, hz.top, res.absorbed, res.dealt===0);
+      }
+    }
+    startPlayerTurn();
+    c.busy = false;
+    render();
+  }, mv.t==='atk' ? 340 : 160);
+}
+
+// 적 행동 — 중독 정산 → 의도(공격/방어/기세) 실행. 연출용 결과를 돌려준다
+function enemyTurn(){
+  const c = G.combat;
+  const e = c.enemy;
+  const res = {mv:null, dealt:0, absorbed:0, win:false};
+  // 중독: 적 턴 시작 시 남은 수치만큼 피해, 이후 1 감소
+  if(e.poison>0){
+    e.hp = Math.max(0, e.hp - e.poison);
+    c.log += `<br>☠️ 중독 피해 ${e.poison}`;
+    sfx('poison');
+    const er = rectOf('.enemy-face');
+    if(er) fxFloat(er.left+er.width/2, er.top+24, e.poison, '#9acd6a', 22);
+    e.poison--;
+    if(e.hp<=0){ res.win = true; return res; }
+  }
+  const mv = e.moves[e.moveIdx % e.moves.length];
+  e.moveIdx++;
+  res.mv = mv;
+  if(mv.t==='atk'){
+    let dmg = mv.v + e.atkBonus;
+    if(e.weak>0) dmg = Math.floor(dmg*0.75); // 약화: 공격력 25% 감소
+    const absorbed = Math.min(c.block, dmg);
+    c.block -= absorbed; dmg -= absorbed;
+    G.hp = Math.max(0, G.hp - dmg);
+    res.dealt = dmg; res.absorbed = absorbed;
+    c.log += `<br>🗡️ ${esc(e.name)}의 공격! <b class="red">${dmg}</b> 피해` + (absorbed?` (${absorbed} 방어)`:'') + (e.weak>0?' <span class="dim">— 약화됨</span>':'');
+    if(G.hp<=0){ G.screen='gameover'; }
+  }else if(mv.t==='def'){
+    e.block += mv.v;
+    c.log += `<br>🛡️ ${esc(e.name)}이(가) 수세를 취한다. (방어 ${mv.v})`;
+  }else if(mv.t==='buff'){
+    e.atkBonus += mv.v;
+    c.log += `<br>🔥 ${esc(e.name)}의 기세가 오른다! (공격 +${mv.v})`;
+  }
+  if(e.weak>0) e.weak--; // 약화 지속 감소
+  return res;
+}
+
+// 다음 적 의도 미리보기 (약화 반영)
+function intentText(e){
+  const mv = e.moves[e.moveIdx % e.moves.length];
+  if(mv.t==='atk'){
+    let v = mv.v + e.atkBonus;
+    if(e.weak>0) v = Math.floor(v*0.75);
+    return {icon:'⚔️', text:`공격 ${v}`};
+  }
+  if(mv.t==='def') return {icon:'🛡️', text:`방어 ${mv.v}`};
+  return {icon:'🔥', text:'기세 상승'};
+}
+
+// 전투 승리 → 보상 화면
+function winCombat(){
+  sfx('win');
+  const c = G.combat;
+  let gold = c.kind==='boss' ? 90 : c.kind==='elite' ? 55 : 22 + Math.floor(Math.random()*14);
+  if(hasRelic('jukbong')) gold += 15;
+  G.gold += gold;
+  if(hasRelic('youngyak')) G.hp = Math.min(G.maxHp, G.hp + 6);
+  if(hasRelic('sulga')){ G.maxHp += 2; G.hp += 2; } // 보은의 술도가: 승리마다 최대 체력 +2
+  // 카드 보상 3장 생성 — 서로 다른 무공 카드 (20% 확률로 연마된 카드)
+  const cardChoices = shuffle(CARD_POOL).slice(0,3).map(k=>({
+    id:G.nextCardId++,
+    key:k,
+    up: Math.random()<0.2 ? 1 : 0,
+  }));
+  // 정예/보스는 비급 보상 추가
+  let relicChoice = null;
+  if(c.kind==='elite' || c.kind==='boss'){
+    const avail = RELICS.filter(r=>!G.relics.includes(r.id));
+    if(avail.length) relicChoice = pick(avail);
+  }
+  G.reward = {gold, cardChoices, relicChoice, kind:c.kind, enemyName:c.enemy.name};
+  G.combat = null;
+  G.screen='reward';
+  render();
+}
+
+// 보상 수령 완료 → 다음 층 or 다음 막 or 엔딩
+function finishNode(){
+  const wasBoss = G.floors[G.floor] && G.floors[G.floor][0]==='boss';
+  if(wasBoss){
+    const finished = G.act;
+    // 최종 보스 격파 → 엔딩 나레이션 → 승리 화면
+    if(G.act >= ACTS.length-1){
+      showStory(STORY.ending, ()=>{ G.screen='victory'; render(); }, '전설이 되다');
+      return;
+    }
+    G.act++;
+    G.floor = 0;
+    G.floors = genAct();
+    // 막 전환 시 체력 30% 회복 (원기 회복)
+    G.hp = Math.min(G.maxHp, G.hp + Math.floor(G.maxHp*0.3));
+    // 보스 격파 후일담 + 다음 막 도입 나레이션
+    showStory([STORY.bossPost[finished], STORY.actIntro[G.act]], ()=>{ G.screen='map'; render(); }, '지도를 펼친다');
+    return;
+  }
+  G.floor++;
+  G.screen='map';
+  render();
+}
+
+/* ===== 노드 진입 ===== */
+function enterNode(type){
+  const act = ACTS[G.act];
+  if(type==='fight') startCombat(pick(act.pool), 'fight');
+  else if(type==='elite') startCombat(act.elite, 'elite');
+  // 보스는 대화 나레이션을 먼저 보여준 뒤 전투 시작
+  else if(type==='boss') showStory([STORY.bossPre[G.act]], ()=>startCombat(ACTS[G.act].boss, 'boss'), '비무 개시!');
+  else if(type==='event'){ G.event = pick(EVENTS); G.screen='event'; render(); }
+  else if(type==='rest'){ G.screen='rest'; render(); }
+  else if(type==='shop'){ openShop(); }
+}
+
+/* ===== 상점 ===== */
+function openShop(){
+  const avail = shuffle(RELICS.filter(r=>!G.relics.includes(r.id) && r.price>0)).slice(0,2);
+  G.shop = {relics:avail, removed:false, healed:false};
+  G.screen='shop';
+  render();
+}
+function buyRelic(id){
+  const r = relicInfo(id);
+  if(G.gold < r.price) return;
+  G.gold -= r.price;
+  sfx('gold');
+  gainRelic(id);
+  G.shop.relics = G.shop.relics.filter(x=>x.id!==id);
+  render();
+}
+
+/* ===== 이벤트 효과 ===== */
+function eventAct(act){
+  const done = (msg)=>{ G.eventResult = msg; render(); };
+  if(act==='skip'){ finishNode(); return; }
+  if(act==='gold'){ G.gold += 40; done('골드 40을 받았다.'); return; }
+  if(act==='maxhp'){ G.maxHp += 8; G.hp = Math.min(G.maxHp, G.hp+8); done('최대 체력이 8 늘고, 체력을 8 회복했다!'); return; }
+  if(act==='relic'){
+    const avail = RELICS.filter(r=>!G.relics.includes(r.id));
+    if(!avail.length){ G.gold += 60; done('배울 비급이 없어 골드 60을 받았다.'); return; }
+    const r = pick(avail); gainRelic(r.id);
+    done(`${r.icon} <b class="gold">${r.name}</b>을(를) 전수받았다! — ${r.desc}`); return;
+  }
+  if(act==='gamble'){
+    if(Math.random()<0.5){
+      const avail = RELICS.filter(r=>!G.relics.includes(r.id));
+      if(avail.length){ const r = pick(avail); gainRelic(r.id);
+        done(`곡조를 버텨냈다! ${r.icon} <b class="gold">${r.name}</b> 획득 — ${r.desc}`); return; }
+      G.gold += 80; done('곡조를 버텨냈다! 골드 80을 받았다.'); return;
+    }
+    G.hp = Math.max(1, G.hp-12);
+    done('심법이 흐트러졌다… <b class="red">체력 -12</b>'); return;
+  }
+  if(act==='upgrade2'){
+    const cand = shuffle(G.deck.filter(c=>!c.up)).slice(0,2);
+    for(const c of cand) c.up = 1;
+    done(cand.length ? `카드 ${cand.length}장이 연마되었다! (${cand.map(c=>CARD_DEFS[c.key].name+'+').join(', ')})` : '더 연마할 카드가 없다…'); return;
+  }
+  if(act==='dupCard'){ G.pickMode = {type:'dup'}; render(); return; }
+  if(act==='removeCard'){ G.pickMode = {type:'remove', from:'event'}; render(); return; }
+}
+
+// 덱에서 카드 1장 선택 처리 (복제/제거/연마 공용)
+function pickDeckCard(id){
+  const pm = G.pickMode;
+  const idx = G.deck.findIndex(c=>c.id===id);
+  if(idx<0) return;
+  const card = G.deck[idx];
+  const dname = CARD_DEFS[card.key].name;
+  if(pm.type==='dup'){
+    G.deck.push({...card, id:G.nextCardId++});
+    G.pickMode = null;
+    G.eventResult = `[${dname}]을(를) 복제했다!`;
+    render(); return;
+  }
+  if(pm.type==='remove'){
+    G.deck.splice(idx,1);
+    const from = pm.from;
+    G.pickMode = null;
+    if(from==='shop'){ G.shop.removed = true; render(); }
+    else { G.eventResult = `[${dname}]을(를) 잊었다.`; render(); }
+    return;
+  }
+  if(pm.type==='upgrade'){
+    if(card.up) return; // 이미 연마된 카드
+    card.up = 1;
+    G.pickMode = null;
+    G.restDone = `[${dname}]을(를) 연마했다! → ${dname}+`;
+    render(); return;
+  }
+}
+
+/* ===== 렌더링 ===== */
+const app = document.getElementById('app');
+
+function render(){
+  if(!G){ renderTitle(); return; }
+  switch(G.screen){
+    case 'charselect': renderCharSelect(); break;
+    case 'story': renderStory(); break;
+    case 'map': renderMap(); break;
+    case 'combat': renderCombat(); break;
+    case 'reward': renderReward(); break;
+    case 'shop': renderShop(); break;
+    case 'rest': renderRest(); break;
+    case 'event': renderEvent(); break;
+    case 'gameover': renderGameOver(); break;
+    case 'victory': renderVictory(); break;
+    default: renderTitle();
+  }
+}
+
+function hudHTML(){
+  const relics = G.relics.map(id=>{
+    const r = relicInfo(id);
+    return `<span class="relic-chip" data-tip="${esc(r.name)}: ${esc(r.desc)}">${r.icon}</span>`;
+  }).join('');
+  return `<div class="hud">
+    <span>${G.char.face} <b>${G.char.name}</b></span>
+    <span id="hud-hp">❤️ ${G.hp}/${G.maxHp} <span class="hpbar"><div style="width:${Math.max(0,G.hp/G.maxHp*100)}%"></div></span></span>
+    <span class="gold">💰 ${G.gold}</span>
+    <span class="dim">🗂️ 덱 ${G.deck.length}장</span>
+    <span class="relic-strip">${relics}</span>
+    <span class="spacer"></span>
+    <button onclick="toggleSfx()" style="padding:5px 10px; font-size:13px;" title="효과음 켜기/끄기">${sfxOn?'🔊':'🔇'}</button>
+    <button onclick="showGuide()" style="padding:5px 12px; font-size:13px;">가이드</button>
+    <button onclick="showCodex()" style="padding:5px 12px; font-size:13px;">비전서</button>
+    <button onclick="showDeck()" style="padding:5px 12px; font-size:13px;">덱 보기</button>
+  </div>`;
+}
+
+/* --- 타이틀 --- */
+function renderTitle(){
+  app.innerHTML = `<div class="title-screen">
+    <div>
+      <div class="title-main">영웅문</div>
+      <div class="title-sub">華山論劍 · 화산논검</div>
+    </div>
+    <div class="title-desc">
+      강호에 나선 젊은 협객이여.<br>
+      검(劍)·장(掌)·권(拳)·기(氣) — 네 문파의 패로 초식을 엮어라.<br>
+      같은 성(星)이 겹치면 연환격, 다섯 성이 이어지면 유운연격.<br>
+      비급을 모으고, 매초풍과 구천인을 넘어,<br>
+      화산 정상에서 서독 구양봉과 천하제일을 겨루라.
+    </div>
+    <div><span class="seal">武俠 로그라이크 덱빌딩</span></div>
+    <div style="display:flex; gap:14px;">
+      <button class="primary" style="font-size:20px; padding:14px 48px;" onclick="goCharSelect()">입문 (入門)</button>
+      <button style="font-size:16px; padding:14px 28px;" onclick="showGuide()">놀이법</button>
+    </div>
+  </div>`;
+}
+function goCharSelect(){
+  G = {screen:'charselect'};
+  renderCharSelect();
+}
+
+/* --- 캐릭터 선택 --- */
+function renderCharSelect(){
+  const cards = CHARACTERS.map(ch=>{
+    const r = relicInfo(ch.relic);
+    return `<div class="char-card" onclick="startRun('${ch.id}')">
+      <div class="char-portrait">${ch.face}</div>
+      <div class="char-name">${ch.name}</div>
+      <div class="char-title">${ch.title}</div>
+      <div class="char-stat">
+        ❤️ 체력 ${ch.hp} &nbsp; 💰 골드 ${ch.gold}<br>
+        ${r.icon} <span class="gold">${r.name}</span><br>
+        <span class="dim" style="font-size:12px;">${r.desc}</span>
+      </div>
+      <div class="dim" style="font-size:13px; margin-top:12px; line-height:1.7; white-space:pre-line;">${ch.desc}</div>
+    </div>`;
+  }).join('');
+  app.innerHTML = `<div class="title-screen">
+    <h2 style="font-size:28px; letter-spacing:6px;">협객을 선택하라</h2>
+    <div class="char-grid">${cards}</div>
+  </div>`;
+}
+// 새 런 시작 — 프롤로그 + 1막 도입 나레이션을 먼저 보여준다
+function startRun(id){
+  newGame(id);
+  showStory(STORY.prologue[id].concat([STORY.actIntro[0]]), ()=>{ G.screen='map'; render(); }, '강호로 나선다');
+}
+
+/* --- 스토리(나레이션) 화면 --- */
+// pages: [{h, body}], cb: 마지막 페이지 후 실행, endLabel: 마지막 버튼 문구
+function showStory(pages, cb, endLabel){
+  G.story = {pages, idx:0, cb, endLabel};
+  G.screen = 'story';
+  render();
+}
+function renderStory(){
+  const st = G.story;
+  const pg = st.pages[st.idx];
+  // {HERO} 치환 후 줄 단위로 나눠 순차 페이드인
+  const body = pg.body.replaceAll('{HERO}', G.char ? G.char.name : '협객');
+  const paras = body.split('\n').map((t,i)=>
+    `<div class="story-p" style="animation-delay:${0.15 + i*0.4}s">${t}</div>`).join('');
+  const last = st.idx === st.pages.length-1;
+  // 장면 일러스트: 'boss'는 현재 막 보스 초상, 그 외는 SCENES 풍경
+  let imgHtml = '';
+  if(pg.img){
+    const svg = pg.img==='boss' ? enemySVG(ACTS[G.act].boss.art) : (SCENES[pg.img]||'');
+    if(svg) imgHtml = `<div class="story-img ${pg.img==='boss'?'portrait':''}">${svg}</div>`;
+  }
+  app.innerHTML = `<div class="center-panel story-panel">
+    ${imgHtml}
+    ${pg.h ? `<div class="story-h">${pg.h}</div>` : ''}
+    <div class="story-body">${paras}</div>
+    <div style="display:flex; gap:10px; justify-content:center;">
+      <button class="primary" onclick="storyNext()">${last ? (st.endLabel||'계속') : '계속 ▸'}</button>
+      ${!last ? `<button onclick="storySkip()">건너뛰기 ▸▸</button>` : ''}
+    </div>
+    <div class="dim" style="font-size:11px;">${st.idx+1} / ${st.pages.length}</div>
+  </div>`;
+}
+function storyNext(){
+  const st = G.story;
+  if(st.idx < st.pages.length-1){ st.idx++; render(); }
+  else{ const cb = st.cb; G.story = null; cb(); }
+}
+function storySkip(){
+  const cb = G.story.cb;
+  G.story = null;
+  cb();
+}
+
+/* --- 지도 --- */
+function renderMap(){
+  const act = ACTS[G.act];
+  const rows = G.floors.map((opts, fi)=>{
+    const nodes = opts.map((t,oi)=>{
+      const m = NODE_META[t];
+      let cls = 'map-node';
+      let onclick = '';
+      if(fi < G.floor) cls += ' done';
+      else if(fi === G.floor){ cls += ' avail'; onclick = `onclick="enterNode('${t}')"`; }
+      else cls += ' future';
+      return `<div class="${cls}" ${onclick}><span class="nicon">${m.icon}</span>${m.label}</div>`;
+    }).join('');
+    return `<div class="map-floor"><span class="floor-num">${fi+1}층</span>${nodes}</div>`;
+  }).join('');
+  app.innerHTML = hudHTML() + `
+    <div class="map-act-title">${act.name}</div>
+    <div class="map-act-sub">${act.sub} — 갈 곳을 선택하세요</div>
+    <div class="map-floors">${rows}</div>`;
+}
+
+/* --- 전투 --- */
+// 무공 카드 렌더링 — 코스트/이름/효과/분류 표시 (슬더스 방식)
+function cardHTML(c, extra, onclick){
+  const d = CARD_DEFS[c.key];
+  const s = SUITS[d.suit];
+  return `<div class="pcard s-${d.suit} t-${d.type} ${extra||''}" data-cid="${c.id}" ${onclick||''}>
+    <span class="cost">${d.cost}</span>
+    <span class="cname">${d.name}${c.up?'<b class="up-mark">+</b>':''}</span>
+    <span class="suit-art">${SUIT_ICONS[d.suit]}</span>
+    <span class="cdesc">${cardDesc(c)}</span>
+    <span class="ctype">${TYPE_LABEL[d.type]} · ${s.hanja} ${s.name}</span>
+  </div>`;
+}
+
+function renderCombat(){
+  const c = G.combat;
+  const e = c.enemy;
+  const it = intentText(e);
+  const kindLabel = c.kind==='boss'?'👑 보스전':c.kind==='elite'?'💀 정예전':'⚔️ 전투';
+  // 적 상태이상 표시
+  const chips = [];
+  if(e.poison>0) chips.push(`<span class="st-chip" style="color:#9acd6a">☠️ 중독 ${e.poison}</span>`);
+  if(e.weak>0) chips.push(`<span class="st-chip" style="color:#c8a0e0">💫 약화 ${e.weak}</span>`);
+  if(e.atkBonus>0) chips.push(`<span class="st-chip" style="color:#e08050">🔥 기세 +${e.atkBonus}</span>`);
+  // 손패 (기력 부족 카드는 흐리게)
+  const handCards = c.hand.map(card=>{
+    const no = c.energy < CARD_DEFS[card.key].cost ? 'noenergy' : '';
+    return cardHTML(card, no, `onclick="playCard(${card.id})"`);
+  }).join('');
+  app.innerHTML = hudHTML() + `<div class="combat">
+    <div class="enemy-zone">
+      <div class="enemy-face ${c.enemyHit?'hit':''}">${e.art ? enemySVG(e.art) : e.face}</div>
+      <div class="enemy-info">
+        <div class="enemy-name">${esc(e.name)} <span class="dim" style="font-size:12px;">${kindLabel} · ${c.turn}합</span></div>
+        <div class="enemy-hpbar"><div style="width:${e.hp/e.maxHp*100}%"></div><span>${e.hp} / ${e.maxHp}${e.block?` (🛡️${e.block})`:''}</span></div>
+        <div style="font-size:13px; display:flex; gap:10px;">${chips.join('') || '<span class="dim">상태 이상 없음</span>'}</div>
+      </div>
+      <div class="intent"><span class="dim" style="font-size:11px;">다음 행동</span><span class="big">${it.icon}</span>${it.text}</div>
+    </div>
+    <div class="player-bar">
+      <div class="energy-orb" title="기력 — 카드를 낼 때 소모"><b>${c.energy}</b>/${c.maxEnergy}</div>
+      <span class="pstat" id="myblock">🛡️ 방어 <b>${c.block}</b></span>
+      ${c.strength ? `<span class="pstat">💪 힘 +${c.strength}</span>` : ''}
+      ${c.perTurnBlock ? `<span class="pstat dim">🧘 호체 +${c.perTurnBlock}/턴</span>` : ''}
+      ${c.chainCount ? `<span class="pstat" style="color:var(--gi)">🔗 ${SUITS[c.chainSuit].name}(${SUITS[c.chainSuit].hanja}) 연계 ×${c.chainCount} <span class="dim" style="font-size:12px;">· 같은 문파 크리 ${critChance(c.chainCount+1)}%</span></span>` : ''}
+      <span class="spacer"></span>
+      <button class="primary" style="font-size:16px; padding:11px 34px;" onclick="endTurn()" ${c.busy?'disabled':''}>턴 종료</button>
+    </div>
+    <div class="combat-log">${c.log}</div>
+    <div class="hand-zone ${c.busy?'locked':''}">${handCards || '<span class="dim" style="align-self:center;">손패가 비었다 — 턴을 종료하세요</span>'}</div>
+    <div class="combat-sub">
+      <span>뽑을 패 ${c.drawPile.length}</span><span>버린 패 ${c.discardPile.length}</span><span class="dim">카드를 눌러 사용 · 남은 손패는 턴 종료 시 버려진다</span>
+    </div>
+  </div>`;
+}
+
+/* --- 보상 --- */
+function renderReward(){
+  const r = G.reward;
+  let html = `<div class="center-panel">
+    <h2>승리!</h2>
+    <div>${esc(r.enemyName)}을(를) 쓰러뜨렸다. <span class="gold">💰 +${r.gold} 골드</span></div>`;
+  if(r.relicChoice){
+    const rl = r.relicChoice;
+    html += `<div>
+      <div class="dim" style="margin-bottom:8px;">비급을 손에 넣었다!</div>
+      <div class="choice-row"><div class="relic-box" onclick="takeRelicReward()">
+        <div class="ricon">${rl.icon}</div><div class="rname">${rl.name}</div><div class="rdesc">${rl.desc}</div>
+      </div></div>
+    </div>`;
+  }
+  if(r.cardChoices){
+    const cards = r.cardChoices.map((c,i)=>cardHTML(c,'',`onclick="takeCardReward(${i})"`)).join('');
+    html += `<div>
+      <div class="dim" style="margin-bottom:8px;">새 초식 한 수를 고르세요 (선택 안 해도 됨)</div>
+      <div class="choice-row">${cards}</div>
+    </div>`;
+  }
+  html += `<div><button class="primary" onclick="finishNode()">계속 나아간다</button></div></div>`;
+  app.innerHTML = hudHTML() + html;
+}
+function takeRelicReward(){
+  if(G.reward.relicChoice){
+    gainRelic(G.reward.relicChoice.id);
+    G.reward.relicChoice = null;
+    sfx('gold');
+    render();
+  }
+}
+function takeCardReward(i){
+  if(G.reward.cardChoices){
+    G.deck.push(G.reward.cardChoices[i]);
+    G.reward.cardChoices = null;
+    sfx('gold');
+    render();
+  }
+}
+
+/* --- 객잔 (휴식) --- */
+function renderRest(){
+  if(G.pickMode && G.pickMode.type==='upgrade'){ renderDeckPick('연마할 카드를 선택하세요 (수치 강화)'); return; }
+  const healAmt = Math.floor(G.maxHp*0.3);
+  app.innerHTML = hudHTML() + `<div class="center-panel">
+    <div class="event-art">⛺</div>
+    <h2>객잔</h2>
+    <div class="event-text">따뜻한 국수 한 그릇과 등불. 잠시 숨을 고른다.</div>
+    ${G.restDone ? `<div class="gold">${G.restDone}</div><button class="primary" onclick="finishNode()">길을 나선다</button>` : `
+    <div class="choice-row">
+      <button onclick="restHeal()">🍜 요기한다 (체력 +${healAmt})</button>
+      <button onclick="restUpgrade()">⚒️ 초식을 연마한다 (카드 1장 강화)</button>
+    </div>`}
+  </div>`;
+}
+function restHeal(){
+  G.hp = Math.min(G.maxHp, G.hp + Math.floor(G.maxHp*0.3));
+  G.restDone = '체력을 회복했다.';
+  render();
+}
+function restUpgrade(){
+  G.pickMode = {type:'upgrade'};
+  render();
+}
+
+/* --- 저잣거리 (상점) --- */
+function renderShop(){
+  if(G.pickMode && G.pickMode.type==='remove'){ renderDeckPick('제거할 카드를 선택하세요'); return; }
+  const s = G.shop;
+  const relics = s.relics.map(r=>{
+    const can = G.gold>=r.price;
+    return `<div class="relic-box ${can?'':'disabled'}" ${can?`onclick="buyRelic('${r.id}')"`:''}>
+      <div class="ricon">${r.icon}</div><div class="rname">${r.name}</div>
+      <div class="rdesc">${r.desc}</div><div class="rprice">💰 ${r.price}</div>
+    </div>`;
+  }).join('') || '<span class="dim">비급이 모두 팔렸다.</span>';
+  app.innerHTML = hudHTML() + `<div class="center-panel">
+    <div class="event-art">💰</div>
+    <h2>저잣거리</h2>
+    <div class="dim">"협객 양반, 좋은 물건 보고 가시오."</div>
+    <div class="choice-row">${relics}</div>
+    <div class="choice-row">
+      <button onclick="shopRemove()" ${!s.removed && G.gold>=60 ? '' : 'disabled'}>🗑️ 초식 파기 — 카드 1장 제거 (💰60)</button>
+      <button onclick="shopHeal()" ${!s.healed && G.gold>=30 ? '' : 'disabled'}>🥟 만두 — 체력 +15 (💰30)</button>
+    </div>
+    <div><button class="primary" onclick="finishNode()">떠난다</button></div>
+  </div>`;
+}
+function shopRemove(){
+  if(G.gold<60 || G.shop.removed) return;
+  G.gold -= 60;
+  G.pickMode = {type:'remove', from:'shop'};
+  render();
+}
+function shopHeal(){
+  if(G.gold<30 || G.shop.healed) return;
+  G.gold -= 30; G.shop.healed = true;
+  G.hp = Math.min(G.maxHp, G.hp+15);
+  render();
+}
+
+/* --- 기연 (이벤트) --- */
+function renderEvent(){
+  if(G.pickMode){
+    renderDeckPick(G.pickMode.type==='dup' ? '복제할 카드를 선택하세요' : '제거할 카드를 선택하세요');
+    return;
+  }
+  const ev = G.event;
+  let body;
+  if(G.eventResult){
+    body = `<div class="event-text">${G.eventResult}</div>
+      <button class="primary" onclick="closeEvent()">길을 나선다</button>`;
+  }else{
+    body = `<div class="event-text">${ev.text}</div>
+      <div class="choice-row" style="flex-direction:column; align-items:center; gap:10px;">
+        ${ev.choices.map((ch,i)=>`<button style="min-width:340px;" onclick="eventAct('${ch.act}')">${ch.label}</button>`).join('')}
+      </div>`;
+  }
+  app.innerHTML = hudHTML() + `<div class="center-panel">
+    <div class="event-art">${ev.art}</div>
+    <h2>${ev.title}</h2>
+    ${body}
+  </div>`;
+}
+function closeEvent(){
+  G.eventResult = null; G.event = null;
+  finishNode();
+}
+
+/* --- 덱에서 카드 선택 화면 (복제/제거/연마 공용) --- */
+function deckSorted(list){
+  return list.slice().sort((a,b)=>{
+    const da = CARD_DEFS[a.key], db = CARD_DEFS[b.key];
+    return da.cost - db.cost || da.name.localeCompare(db.name,'ko');
+  });
+}
+function renderDeckPick(title){
+  // 연마 모드에서는 아직 연마 안 된 카드만 보여준다
+  const pool = (G.pickMode && G.pickMode.type==='upgrade') ? G.deck.filter(c=>!c.up) : G.deck;
+  const cards = deckSorted(pool).map(c=>cardHTML(c,'',`onclick="pickDeckCard(${c.id})"`)).join('');
+  app.innerHTML = hudHTML() + `<div class="center-panel" style="max-width:820px;">
+    <h2 style="font-size:20px;">${title}</h2>
+    <div class="deck-grid">${cards}</div>
+  </div>`;
+}
+
+/* --- 덱 보기 오버레이 --- */
+function showDeck(){
+  const cards = deckSorted(G.deck).map(c=>cardHTML(c,'','')).join('');
+  const ov = document.createElement('div');
+  ov.className = 'overlay';
+  ov.innerHTML = `<div class="center-panel" style="max-width:820px;">
+    <h2 style="font-size:20px;">내 덱 (${G.deck.length}장) <span class="dim" style="font-size:13px;">이름+ = 연마됨</span></h2>
+    <div class="deck-grid">${cards}</div>
+    <button class="primary" onclick="this.closest('.overlay').remove()">닫기</button>
+  </div>`;
+  ov.addEventListener('click', e=>{ if(e.target===ov) ov.remove(); });
+  document.body.appendChild(ov);
+}
+
+/* --- 패배 / 승리 --- */
+function renderGameOver(){
+  app.innerHTML = `<div class="title-screen">
+    <div style="font-size:64px;">🕯️</div>
+    <h2 style="font-size:32px; color:var(--red);">협객, 강호에 지다</h2>
+    <div class="dim" style="line-height:1.9;">
+      ${G.char.name}은(는) ${ACTS[G.act].name.split('—')[1].trim()}에서 쓰러졌다.<br>
+      도달: ${ACTS[G.act].name} ${G.floor+1}층 · 비급 ${G.relics.length}권 · 덱 ${G.deck.length}장
+    </div>
+    <button class="primary" style="font-size:18px; padding:12px 40px;" onclick="G=null; render();">다시 강호로</button>
+  </div>`;
+}
+function renderVictory(){
+  sfx('win');
+  app.innerHTML = `<div class="title-screen">
+    <div style="font-size:72px;">🏔️</div>
+    <div class="title-main" style="font-size:52px; letter-spacing:10px;">천하제일</div>
+    <div class="title-sub">華山論劍 制覇</div>
+    <div class="title-desc">
+      서독 구양봉이 무릎을 꿇었다.<br>
+      화산 정상의 바람이 ${G.char.name}의 옷자락을 흔든다.<br>
+      동사·서독·남제·북개 — 그리고 이제, 그대의 이름이 강호에 새겨진다.<br><br>
+      <span class="gold">비급 ${G.relics.length}권 · 덱 ${G.deck.length}장 · 남은 체력 ${G.hp}/${G.maxHp}</span>
+    </div>
+    <button class="primary" style="font-size:18px; padding:12px 40px;" onclick="G=null; render();">새로운 전설 (다시 하기)</button>
+  </div>`;
+}
+
+/* ===== 효과음 (Web Audio 합성 — 외부 파일 없이 코드로 소리 생성) ===== */
+let AC = null; // AudioContext (첫 입력 후 생성 — 브라우저 자동재생 정책)
+let sfxOn = storageGet('hg_sfx') !== 'off';
+function audioCtx(){
+  if(!AC){
+    try{ AC = new (window.AudioContext || window.webkitAudioContext)(); }catch(e){ return null; }
+  }
+  if(AC && AC.state === 'suspended') AC.resume();
+  return AC;
+}
+// 첫 클릭/터치에서 오디오 잠금 해제
+document.addEventListener('pointerdown', audioCtx);
+
+// 단일 톤: 주파수 슬라이드(f→f2) + 빠른 감쇠 엔벨로프
+function tone(o){
+  const a = audioCtx(); if(!a) return;
+  const t = a.currentTime + (o.delay||0);
+  const dur = o.dur || 0.15;
+  const osc = a.createOscillator();
+  const g = a.createGain();
+  osc.type = o.type || 'sine';
+  osc.frequency.setValueAtTime(o.f || 440, t);
+  if(o.f2) osc.frequency.exponentialRampToValueAtTime(Math.max(20, o.f2), t + dur);
+  g.gain.setValueAtTime(0, t);
+  g.gain.linearRampToValueAtTime(o.vol || 0.2, t + 0.006);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  osc.connect(g); g.connect(a.destination);
+  osc.start(t); osc.stop(t + dur + 0.05);
+}
+// 노이즈 버스트: 타격감·바람소리 (필터로 색깔 조절)
+function noiseHit(o){
+  const a = audioCtx(); if(!a) return;
+  const t = a.currentTime + (o.delay||0);
+  const dur = o.dur || 0.15;
+  const buf = a.createBuffer(1, Math.floor(a.sampleRate*dur), a.sampleRate);
+  const d = buf.getChannelData(0);
+  for(let i=0;i<d.length;i++) d[i] = (Math.random()*2-1) * (1 - i/d.length);
+  const src = a.createBufferSource(); src.buffer = buf;
+  const f = a.createBiquadFilter();
+  f.type = o.hp ? 'highpass' : 'lowpass';
+  f.frequency.value = o.cut || 1000;
+  const g = a.createGain(); g.gain.value = o.vol || 0.2;
+  src.connect(f); f.connect(g); g.connect(a.destination);
+  src.start(t);
+}
+// 이름으로 효과음 재생
+function sfx(name){
+  if(!sfxOn) return;
+  switch(name){
+    case 'card':   noiseHit({dur:.07, cut:2600, hp:true, vol:.09}); break;                 // 카드 스냅
+    case 'geom':   noiseHit({dur:.13, cut:3200, hp:true, vol:.20}); tone({f:2400, f2:500, type:'sawtooth', dur:.12, vol:.07}); break; // 검: 금속성 참격
+    case 'jang':   noiseHit({dur:.2,  cut:480, vol:.28}); tone({f:220, f2:70, dur:.22, vol:.24}); break;    // 장: 묵직한 장풍
+    case 'gwon':   tone({f:150, f2:48, dur:.16, vol:.34}); noiseHit({dur:.1, cut:800, vol:.18}); break;     // 권: 둔탁한 타격
+    case 'gi':     tone({f:600, f2:1300, dur:.26, vol:.11}); tone({f:900, f2:1900, dur:.24, vol:.07, delay:.05}); break; // 기: 상승 기류
+    case 'crit':   tone({f:420, f2:70, type:'square', dur:.2, vol:.2}); noiseHit({dur:.24, cut:1500, vol:.28}); tone({f:1200, f2:2600, dur:.16, vol:.1, delay:.06}); break; // 크리티컬
+    case 'guard':  tone({f:820, f2:520, type:'triangle', dur:.16, vol:.15}); tone({f:1650, dur:.09, vol:.05, delay:.02}); break; // 기막 방어
+    case 'hurt':   tone({f:120, f2:42, type:'sawtooth', dur:.28, vol:.28}); noiseHit({dur:.2, cut:380, vol:.22}); break; // 피격
+    case 'poison': tone({f:320, f2:150, type:'triangle', dur:.11, vol:.11}); tone({f:260, f2:120, type:'triangle', dur:.11, vol:.09, delay:.09}); break; // 중독
+    case 'chain':  [523,659,784].forEach((f,i)=>tone({f, type:'triangle', dur:.15, vol:.13, delay:i*0.07})); break; // 연계기 차임
+    case 'win':    [523,659,784,1046].forEach((f,i)=>tone({f, type:'triangle', dur:.3, vol:.14, delay:i*0.12})); break; // 승리
+    case 'lose':   [392,300,220,130].forEach((f,i)=>tone({f, dur:.4, vol:.16, delay:i*0.16})); break; // 패배
+    case 'gold':   tone({f:1320, type:'triangle', dur:.08, vol:.11}); tone({f:1680, type:'triangle', dur:.1, vol:.09, delay:.06}); break; // 골드/보상
+  }
+}
+// 음소거 토글 (설정은 저장됨)
+function toggleSfx(){
+  sfxOn = !sfxOn;
+  storageSet('hg_sfx', sfxOn ? 'on' : 'off');
+  if(sfxOn) sfx('gold');
+  render();
+}
+
+/* ===== 전투 연출(FX) 헬퍼 ===== */
+// 연출 전용 레이어 — render()가 #app을 다시 그려도 지워지지 않도록 body에 부착
+const fxLayer = document.createElement('div');
+fxLayer.id = 'fx';
+document.body.appendChild(fxLayer);
+
+// 연출 요소를 레이어에 넣고 일정 시간 후 제거
+function fxAdd(el, ms){
+  fxLayer.appendChild(el);
+  setTimeout(()=>el.remove(), ms);
+}
+// 특정 요소의 화면 좌표 얻기 (연출 위치 기준점)
+function rectOf(sel){
+  const el = document.querySelector(sel);
+  return el ? el.getBoundingClientRect() : null;
+}
+// 초식명 붓글씨 스플래시 (연계 발동 시 연계명도 함께)
+function fxSplash(main, sub){
+  const el = document.createElement('div');
+  el.className = 'fx-splash';
+  el.innerHTML = esc(main) + (sub ? `<div class="fx-splash-sub">연계 · ${esc(sub)}</div>` : '');
+  fxAdd(el, 950);
+}
+// 떠오르는 숫자/텍스트
+function fxFloat(x, y, text, color, size){
+  const el = document.createElement('div');
+  el.className = 'fx-float';
+  el.style.cssText = `left:${x}px; top:${y}px; color:${color}; font-size:${size||28}px;`;
+  el.textContent = text;
+  fxAdd(el, 1050);
+}
+/* --- 문파별 타격 이펙트 --- */
+const SUIT_FX = {geom:'#a8d0f0', jang:'#f09a88', gwon:'#f0c060', gi:'#8ae0bc'};
+// 파편 폭발 — 사방으로 튀는 불꽃 입자
+function fxBurst(x, y, color, n){
+  for(let i=0; i<(n||14); i++){
+    const el = document.createElement('div');
+    el.className = 'fx-part';
+    const ang = Math.random()*Math.PI*2;
+    const dist = 45 + Math.random()*70;
+    el.style.cssText = `left:${x}px; top:${y}px; background:${color};
+      width:${5+Math.random()*6}px; height:${5+Math.random()*6}px;
+      --dx:${Math.cos(ang)*dist}px; --dy:${Math.sin(ang)*dist}px;`;
+    fxAdd(el, 650);
+  }
+}
+// 파동 링 — 장풍/기공 확산
+function fxRing(x, y, color, delay){
+  setTimeout(()=>{
+    const el = document.createElement('div');
+    el.className = 'fx-ring';
+    el.style.cssText = `left:${x}px; top:${y}px; border-color:${color};`;
+    fxAdd(el, 600);
+  }, delay||0);
+}
+// 참격 — 빛나는 검격 선 (각도 지정)
+function fxSlashLine(x, y, color, deg, delay){
+  setTimeout(()=>{
+    const el = document.createElement('div');
+    el.className = 'fx-slash';
+    el.style.cssText = `left:${x-80}px; top:${y-80}px; --rot:${deg}deg; --slashc:${color};`;
+    fxAdd(el, 440);
+  }, delay||0);
+}
+// 문파별 종합 타격 연출: 검=삼연참 / 장=이중 파동 / 권=대폭발 / 기=기공 파문
+function fxImpact(suit, x, y){
+  const color = SUIT_FX[suit] || '#fff';
+  if(suit==='geom'){
+    fxSlashLine(x, y, color, -38, 0);
+    fxSlashLine(x, y, color, 24, 110);
+    fxSlashLine(x, y, color, -80, 220);
+    fxBurst(x, y, color, 8);
+  }else if(suit==='jang'){
+    fxRing(x, y, color, 0);
+    fxRing(x, y, color, 140);
+    fxBurst(x, y, color, 8);
+  }else if(suit==='gwon'){
+    fxBurst(x, y, color, 20);
+    fxRing(x, y, color, 60);
+  }else{ // gi
+    fxRing(x, y, color, 0);
+    fxRing(x, y, color, 120);
+    fxRing(x, y, color, 240);
+  }
+}
+/* --- 방어 이펙트 --- */
+// 기막(氣幕) 돔 — 방어를 얻을 때 손패 위로 떠오르는 반구
+function fxGuard(x, y, amount){
+  const el = document.createElement('div');
+  el.className = 'fx-guard';
+  el.style.cssText = `left:${x-70}px; top:${y-52}px;`;
+  fxAdd(el, 900);
+  fxFloat(x, y-56, '🛡 +'+amount, 'var(--gi)', 22);
+}
+// 방어 성공 — 적 공격을 흡수했을 때
+function fxGuardHit(x, y, absorbed, perfect){
+  const el = document.createElement('div');
+  el.className = 'fx-guard flash';
+  el.style.cssText = `left:${x-70}px; top:${y-52}px;`;
+  fxAdd(el, 500);
+  fxBurst(x, y-30, '#8ae0bc', 8);
+  fxFloat(x, y-60, perfect ? '완벽 방어!' : `🛡 ${absorbed} 막음`, 'var(--gi)', perfect?26:20);
+}
+// 피격 붉은 섬광
+function fxVignette(){
+  const el = document.createElement('div');
+  el.className = 'fx-vignette';
+  fxAdd(el, 500);
+}
+// 화면 흔들림
+function fxShake(){
+  app.classList.add('shake-app');
+  setTimeout(()=>app.classList.remove('shake-app'), 450);
+}
+
+/* ===== 비전서 (초식/연계/비급 도감) ===== */
+function showCodex(){
+  const owned = (G && G.relics) ? G.relics : [];
+  // 카드 도감 — 코스트순
+  const keys = Object.keys(CARD_DEFS).sort((a,b)=> CARD_DEFS[a].cost-CARD_DEFS[b].cost || CARD_DEFS[a].name.localeCompare(CARD_DEFS[b].name,'ko'));
+  const cardRows = keys.map(k=>{
+    const d = CARD_DEFS[k];
+    const dummy = {key:k, up:0};
+    return `<tr><td style="white-space:nowrap;" class="gold">${d.name}${d.basic?' <span class="dim">(기본)</span>':''}</td>
+      <td>${d.cost}</td><td class="dim">${TYPE_LABEL[d.type]} · ${SUITS[d.suit].name}</td><td>${cardDesc(dummy)}</td></tr>`;
+  }).join('');
+  // 상태 효과 설명
+  const statusRows = [
+    ['⚡ 기력','카드를 낼 때 소모. 매 턴 3으로 회복 (구음진경 +1)'],
+    ['🛡️ 방어','적의 공격을 먼저 흡수. 내 턴이 시작되면 사라진다'],
+    ['💪 힘','공격 카드의 피해가 힘만큼 증가 (전투 내내 유지)'],
+    ['☠️ 중독','적 턴마다 남은 수치만큼 피해를 주고 1씩 감소'],
+    ['💫 약화','걸린 적의 공격력 25% 감소, 턴마다 1씩 감소'],
+    ['🔥 기세','적이 스스로 공격력을 올린 상태'],
+    ['🔗 연계','같은 문파 카드를 연속 사용하면 단계 상승. 다른 문파를 쓰면 초기화 (턴이 넘어가도 유지)'],
+    ['💥 크리티컬','연계 2연속째부터 확률 +15%씩 (최대 80%). 발동 시 피해 2배'],
+  ].map(([n,d])=>`<tr><td style="white-space:nowrap;">${n}</td><td class="dim">${d}</td></tr>`).join('');
+  // 연계기 표
+  const chainRows = SUIT_KEYS.map(s=>{
+    const a = CHAIN_ARTS[s];
+    return `<tr><td style="white-space:nowrap;" class="gold">${SUITS[s].hanja} ${SUITS[s].name} 3연속</td><td>【${a.name}】</td><td class="dim">${a.desc}</td></tr>`;
+  }).join('');
+  // 비급 목록 (보유 중이면 금색 + ✓)
+  const relicRows = RELICS.map(r=>{
+    const has = owned.includes(r.id);
+    return `<tr ${has?'style="color:var(--gold)"':''}><td style="white-space:nowrap;">${r.icon} ${r.name}${has?' ✓':''}</td><td class="dim">${r.desc}</td></tr>`;
+  }).join('');
+  const ov = document.createElement('div');
+  ov.className = 'overlay';
+  ov.innerHTML = `<div class="center-panel codex" style="max-width:760px;">
+    <h2 style="font-size:22px;">비전서 (秘傳書)</h2>
+    <div style="text-align:left;">
+      <h3>상태 효과</h3>
+      <table>${statusRows}</table>
+      <h3>연계기 — 같은 문파 3연속마다 자동 발동 (☯ 전진검진: 2연속)</h3>
+      <table>${chainRows}</table>
+      <h3>무공 카드 도감 — 이름 / 기력 / 분류 / 효과</h3>
+      <table>${cardRows}</table>
+      <h3>비급 전서 (✓ = 보유)</h3>
+      <table>${relicRows}</table>
+    </div>
+    <button class="primary" onclick="this.closest('.overlay').remove()">닫기</button>
+  </div>`;
+  ov.addEventListener('click', e=>{ if(e.target===ov) ov.remove(); });
+  document.body.appendChild(ov);
+}
+
+/* ===== 놀이법 가이드 ===== */
+function showGuide(){
+  const ov = document.createElement('div');
+  ov.className = 'overlay';
+  ov.innerHTML = `<div class="center-panel codex" style="max-width:680px;">
+    <h2 style="font-size:22px;">놀이법 (入門 指南)</h2>
+    <div class="guide-body">
+      <h3>🎯 목표</h3>
+      <p>세 개의 막(幕)을 지나 화산 정상에 올라, 서독 구양봉을 꺾고 <b class="gold">천하제일</b>이 되는 것. 체력이 다하면 그 자리에서 여정이 끝난다.</p>
+      <h3>⚔️ 전투 — 한 턴의 순서</h3>
+      <p>① 매 턴 <b class="gold">기력 3</b>을 받고 카드 5장을 뽑는다 → ② 카드 왼쪽 위 숫자(기력 비용)를 확인하고 <b>카드를 눌러 사용</b>한다 → ③ 기력이 남는 한 몇 장이든 낼 수 있다 → ④ <b>[턴 종료]</b>를 누르면 적이 예고된 행동(⚔️공격 / 🛡️방어 / 🔥기세)을 실행한다.</p>
+      <p>남은 손패는 턴 종료 시 전부 버려지고, 다음 턴에 새로 5장을 뽑는다. 덱이 다 떨어지면 버린 패를 섞어 다시 쓴다.</p>
+      <h3>🛡️ 방어</h3>
+      <p>방어·기술 카드로 <b style="color:var(--gi)">방어</b>를 쌓으면 적의 공격을 먼저 흡수한다. 단, <b>내 턴이 시작되면 방어는 사라진다</b> — 적의 예고 공격력을 보고 필요한 만큼만 쌓을 것.</p>
+      <h3>☠️ 상태 이상</h3>
+      <p><b>중독</b>은 적 턴마다 피해를 주며 1씩 줄어들고, <b>약화</b>는 적 공격력을 25% 깎는다. <b>힘</b>을 올리면 내 모든 공격 피해가 그만큼 강해진다. <b>비공(내공심법 등)</b> 카드는 한 번 쓰면 전투 내내 지속된다.</p>
+      <h3>🔗 연계 & 크리티컬</h3>
+      <p><b>같은 문파</b> 카드를 연속으로 쓰면 연계가 쌓인다 (예: 권→권→권). 2연속째부터 <b class="gold">크리티컬 확률 +15%씩</b> 붙고 (최대 80%, 피해 2배), <b>3연속마다 연계기</b>가 자동 발동한다 — 권 붕권세(추가 피해) / 검 검기종횡(2연타) / 장 장풍여파(피해+약화) / 기 기순환(기력 +1). 다른 문파를 쓰면 연계가 끊긴다. 덱을 한 문파로 몰수록 강해진다!</p>
+      <h3>🗺️ 지도</h3>
+      <p>⚔️ 전투 · 💀 정예(강하지만 비급 보상) · 🏮 기연(이야기 선택지) · ⛺ 객잔(회복/연마) · 💰 저잣거리(비급 구매/카드 제거) · 👑 보스</p>
+      <h3>📈 성장</h3>
+      <p>전투 승리 후 카드 보상은 <b>골라도, 안 골라도 된다</b> — 덱이 두꺼우면 핵심 카드가 잘 안 온다. 연마(이름+)는 카드 수치 강화. 기본 타격/방어를 제거해 덱을 얇게 만드는 것이 고수의 길.</p>
+      <h3>💡 요령 세 가지</h3>
+      <p>하나, 덱은 얇게 — 기본 카드는 저잣거리에서 판다. 둘, 적의 예고를 읽고 "때릴 턴"과 "막을 턴"을 구분하라. 셋, 보스 앞 7층 객잔은 거르지 말 것.</p>
+    </div>
+    <button class="primary" onclick="this.closest('.overlay').remove()">알겠소 (닫기)</button>
+  </div>`;
+  ov.addEventListener('click', e=>{ if(e.target===ov) ov.remove(); });
+  document.body.appendChild(ov);
+}
+// localStorage 안전 접근 (차단 환경 대비)
+function storageGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
+function storageSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
+
+/* ===== 시작 ===== */
+render();
+</script>
+</body>
+</html>
