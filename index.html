@@ -1399,11 +1399,13 @@ function finishNode(){
     G.floors = genAct();
     // 막 전환 시 체력 30% 회복 (원기 회복)
     G.hp = Math.min(G.maxHp, G.hp + Math.floor(G.maxHp*0.3));
+    saveGame(); // 막 전환 자동 저장
     // 보스 격파 후일담 + 다음 막 도입 나레이션
     showStory([STORY.bossPost[finished], STORY.actIntro[G.act]], ()=>{ G.screen='map'; render(); }, '지도를 펼친다');
     return;
   }
   G.floor++;
+  saveGame(); // 층 이동 자동 저장
   G.screen='map';
   render();
 }
@@ -1539,6 +1541,18 @@ function hudHTML(){
 
 /* --- 타이틀 --- */
 function renderTitle(){
+  // 저장된 여정이 있으면 이어하기 버튼 표시
+  const save = readSave();
+  const saveChar = save ? CHARACTERS.find(c=>c.id===save.char) : null;
+  const saveSummary = save && saveChar
+    ? `${saveChar.name} · ${ACTS[save.act].name.split('—')[0].trim()} ${save.floor+1}층 · ❤️ ${save.hp}/${save.maxHp} · 💰 ${save.gold}`
+    : '';
+  const buttons = save
+    ? `<button class="primary" style="font-size:20px; padding:14px 44px;" onclick="loadGame()">이어하기 (再開)</button>
+       <button style="font-size:16px; padding:14px 24px;" onclick="goCharSelect()">처음부터</button>
+       <button style="font-size:16px; padding:14px 24px;" onclick="showGuide()">놀이법</button>`
+    : `<button class="primary" style="font-size:20px; padding:14px 48px;" onclick="goCharSelect()">입문 (入門)</button>
+       <button style="font-size:16px; padding:14px 28px;" onclick="showGuide()">놀이법</button>`;
   app.innerHTML = `<div class="title-screen">
     <div>
       <div class="title-main">영웅문</div>
@@ -1546,15 +1560,15 @@ function renderTitle(){
     </div>
     <div class="title-desc">
       강호에 나선 젊은 협객이여.<br>
-      검(劍)·장(掌)·권(拳)·기(氣) — 네 문파의 패로 초식을 엮어라.<br>
-      같은 성(星)이 겹치면 연환격, 다섯 성이 이어지면 유운연격.<br>
+      검(劍)·장(掌)·권(拳)·기(氣) — 네 문파의 무공으로 패를 엮어라.<br>
+      같은 문파를 이어 치면 연계가 쌓이고, 회심의 일격이 터진다.<br>
       비급을 모으고, 매초풍과 구천인을 넘어,<br>
       화산 정상에서 서독 구양봉과 천하제일을 겨루라.
     </div>
     <div><span class="seal">武俠 로그라이크 덱빌딩</span></div>
-    <div style="display:flex; gap:14px;">
-      <button class="primary" style="font-size:20px; padding:14px 48px;" onclick="goCharSelect()">입문 (入門)</button>
-      <button style="font-size:16px; padding:14px 28px;" onclick="showGuide()">놀이법</button>
+    ${save ? `<div class="dim" style="font-size:13px;">📜 저장된 여정: ${saveSummary}</div>` : ''}
+    <div style="display:flex; gap:14px; flex-wrap:wrap; justify-content:center;">
+      ${buttons}
     </div>
   </div>`;
 }
@@ -1587,6 +1601,7 @@ function renderCharSelect(){
 // 새 런 시작 — 프롤로그 + 1막 도입 나레이션을 먼저 보여준다
 function startRun(id){
   newGame(id);
+  saveGame(); // 새 여정 자동 저장 (기존 기록 덮어씀)
   showStory(STORY.prologue[id].concat([STORY.actIntro[0]]), ()=>{ G.screen='map'; render(); }, '강호로 나선다');
 }
 
@@ -1888,6 +1903,7 @@ function showDeck(){
 
 /* --- 패배 / 승리 --- */
 function renderGameOver(){
+  clearSave(); // 여정 종료 — 저장 기록 삭제
   app.innerHTML = `<div class="title-screen">
     <div style="font-size:64px;">🕯️</div>
     <h2 style="font-size:32px; color:var(--red);">협객, 강호에 지다</h2>
@@ -1899,6 +1915,7 @@ function renderGameOver(){
   </div>`;
 }
 function renderVictory(){
+  clearSave(); // 여정 완주 — 저장 기록 삭제
   sfx('win');
   app.innerHTML = `<div class="title-screen">
     <div style="font-size:72px;">🏔️</div>
@@ -2208,6 +2225,42 @@ function showGuide(){
 // localStorage 안전 접근 (차단 환경 대비)
 function storageGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
 function storageSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
+
+/* ===== 자동 저장 / 이어하기 =====
+   층을 넘어갈 때마다 진행 상황을 브라우저에 저장한다.
+   전투·보상 도중에 껐다면 이어하기 시 그 층부터 다시 시작 (저장 상태는 항상 층 경계) */
+function saveGame(){
+  if(!G || !G.deck || !G.char) return;
+  const snap = {
+    char:G.char.id, hp:G.hp, maxHp:G.maxHp, gold:G.gold,
+    relics:G.relics, deck:G.deck, nextCardId:G.nextCardId,
+    act:G.act, floor:G.floor, floors:G.floors,
+    savedAt:Date.now(),
+  };
+  storageSet('hg_save', JSON.stringify(snap));
+}
+function readSave(){
+  try{
+    const s = JSON.parse(storageGet('hg_save') || 'null');
+    if(s && s.char && Array.isArray(s.deck) && CHARACTERS.some(c=>c.id===s.char)) return s;
+  }catch(e){}
+  return null;
+}
+function clearSave(){ storageSet('hg_save',''); }
+// 이어하기 — 저장된 층의 지도에서 재개
+function loadGame(){
+  const s = readSave();
+  if(!s){ G=null; render(); return; }
+  const ch = CHARACTERS.find(c=>c.id===s.char);
+  G = {
+    char:ch, hp:s.hp, maxHp:s.maxHp, gold:s.gold,
+    relics:s.relics, deck:s.deck, nextCardId:s.nextCardId,
+    act:s.act, floor:s.floor, floors:s.floors,
+    combat:null, screen:'map',
+  };
+  sfx('gold');
+  render();
+}
 
 /* ===== 시작 ===== */
 render();
