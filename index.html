@@ -1416,7 +1416,7 @@ function enterNode(type){
   // 보스는 대화 나레이션을 먼저 보여준 뒤 전투 시작
   else if(type==='boss') showStory([STORY.bossPre[G.act]], ()=>startCombat(ACTS[G.act].boss, 'boss'), '비무 개시!');
   else if(type==='event'){ G.event = pick(EVENTS); G.screen='event'; render(); }
-  else if(type==='rest'){ G.screen='rest'; render(); }
+  else if(type==='rest'){ G.restDone = null; G.pickMode = null; G.screen='rest'; render(); } // 이전 방문 상태 초기화
   else if(type==='shop'){ openShop(); }
 }
 
@@ -1780,8 +1780,10 @@ function renderRest(){
   </div>`;
 }
 function restHeal(){
+  const before = G.hp;
   G.hp = Math.min(G.maxHp, G.hp + Math.floor(G.maxHp*0.3));
-  G.restDone = '체력을 회복했다.';
+  G.restDone = `체력을 ${G.hp - before} 회복했다. (❤️ ${G.hp}/${G.maxHp})`;
+  sfx('gold');
   render();
 }
 function restUpgrade(){
