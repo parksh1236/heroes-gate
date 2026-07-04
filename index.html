@@ -382,9 +382,53 @@ h1,h2,h3{font-weight:600;}
 /* 내 캐릭터 초상 (숨쉬기) */
 .player-face{animation:bob 3.4s ease-in-out infinite;}
 .player-face svg{width:130px; height:130px; display:block;}
+/* ===== 주인공 픽셀 스프라이트 (itch.io CC0 — LuizMelo Martial Hero 1·2) ===== */
+.hero-sprite{
+  width:170px; height:170px;
+  background-repeat:no-repeat; background-size:auto 100%;
+  image-rendering:pixelated;
+  /* 원본 캔버스 여백 보정: 인물이 크게 보이도록 확대 */
+  transform:scale(1.6);
+  transform-origin:50% 72%;
+}
+/* 진우 (Martial Hero): 대기 8프레임 / 공격 6 / 피격 4 */
+.h-jinwoo.idle{background-image:url('assets/jinwoo_idle.png'); animation:sprJi .9s steps(8) infinite;}
+.h-jinwoo.attack{background-image:url('assets/jinwoo_attack.png'); animation:sprJa .5s steps(6) forwards;}
+.h-jinwoo.hurtanim{background-image:url('assets/jinwoo_hit.png'); animation:sprJh .4s steps(4) forwards;}
+@keyframes sprJi{to{background-position-x:-1360px;}}
+@keyframes sprJa{to{background-position-x:-1020px;}}
+@keyframes sprJh{to{background-position-x:-680px;}}
+/* 선우 (Martial Hero 2): 대기 4 / 공격 4 / 피격 3 */
+.h-sunwoo.idle{background-image:url('assets/sunwoo_idle.png'); animation:sprSi .8s steps(4) infinite;}
+.h-sunwoo.attack{background-image:url('assets/sunwoo_attack.png'); animation:sprSa .45s steps(4) forwards;}
+.h-sunwoo.hurtanim{background-image:url('assets/sunwoo_hit.png'); animation:sprSh .35s steps(3) forwards;}
+@keyframes sprSi{to{background-position-x:-680px;}}
+@keyframes sprSa{to{background-position-x:-680px;}}
+@keyframes sprSh{to{background-position-x:-510px;}}
+/* 픽셀 이펙트 스프라이트 (pimen VFX) */
+.fx-sprite{
+  position:fixed; z-index:206; pointer-events:none;
+  background-repeat:no-repeat; background-size:auto 100%;
+  image-rendering:pixelated;
+}
+@keyframes fxspr{to{background-position-x:var(--fxend);}}
 /* 적은 좌우 반전으로 나를 향해 마주 봄 */
-.enemy-side .enemy-face svg{transform:scaleX(-1);}
-.fighter .enemy-face svg{width:130px; height:130px;}
+.enemy-fighter .enemy-face svg{transform:scaleX(-1);}
+.fighter .enemy-face svg{width:var(--fsz,130px); height:var(--fsz,130px);}
+/* 적 편성 (1~3명 가로 배치) */
+.enemy-group{display:flex; gap:6px; align-items:flex-end;}
+.enemy-group .fighter{width:auto; min-width:110px; cursor:pointer;}
+.enemy-group .fighter .fhp{width:110px;}
+/* 목표 지정된 적: 금색 조준 표시 */
+.fighter.targeted .enemy-face svg{filter:drop-shadow(0 0 9px var(--gold));}
+.fighter.targeted .fhead{color:var(--gold);}
+.fighter.targeted::before{
+  content:'▼'; position:absolute; top:-16px; left:50%; transform:translateX(-50%);
+  color:var(--gold); font-size:13px; animation:bob 1.6s ease-in-out infinite;
+}
+/* 격파된 적 */
+.fighter.dead{opacity:.22; filter:grayscale(1); cursor:default;}
+.fighter.dead .enemy-face{animation:none;}
 /* 돌진 (전진 후 유지) → 렌더 후 dashback으로 복귀 */
 .fighter.dash{animation:dashGo .26s ease-in forwards; z-index:6;}
 @keyframes dashGo{to{transform:translateX(var(--dash));}}
@@ -587,8 +631,11 @@ const CARD_DEFS = {
   dragon:   {name:'항룡십팔장', cost:2, type:'attack', suit:'jang', dmg:15, up:{dmg:6}},
   bone:     {name:'구음백골조', cost:1, type:'attack', suit:'gwon', dmg:5, poison:3, up:{poison:2}},
   mountain: {name:'파산권',     cost:2, type:'attack', suit:'gwon', dmg:13, up:{dmg:5}},
-  lion:     {name:'사자후',     cost:2, type:'attack', suit:'gi',   dmg:8, weak:2, up:{dmg:4}},
+  lion:     {name:'사자후',     cost:2, type:'attack', suit:'gi',   dmg:8, weak:2, aoe:true, up:{dmg:4}},
   yiyang:   {name:'일양지',     cost:3, type:'attack', suit:'gi',   dmg:26, up:{dmg:9}},
+  sweep:    {name:'횡소천군',   cost:2, type:'attack', suit:'geom', dmg:9, aoe:true, up:{dmg:4}},
+  whirl:    {name:'선풍퇴',     cost:1, type:'attack', suit:'gwon', dmg:5, aoe:true, up:{dmg:3}},
+  storm:    {name:'폭풍연권',   cost:2, type:'attack', suit:'gwon', dmg:4, hits:4, up:{dmg:1}},
   // ── 기술 (방어·보조) ──
   defend:   {name:'방어',       cost:1, type:'skill', suit:'gi',   block:5,  up:{block:3}, basic:true},
   iron:     {name:'철포삼',     cost:1, type:'skill', suit:'gwon', block:8,  up:{block:3}},
@@ -600,6 +647,7 @@ const CARD_DEFS = {
   // ── 비공 (사용 시 전투 내내 지속) ──
   neigong:  {name:'내공심법',   cost:1, type:'power', suit:'gi', strength:2, up:{strength:1}},
   guardian: {name:'호체신공',   cost:2, type:'power', suit:'gi', perTurnBlock:3, up:{perTurnBlock:2}},
+  swift:    {name:'쾌수비결',   cost:2, type:'power', suit:'gwon', hitsPlus:1, up:{hitsPlus:1}},
 };
 // 보상으로 등장하는 카드 (기본 카드 제외)
 const CARD_POOL = Object.keys(CARD_DEFS).filter(k=>!CARD_DEFS[k].basic);
@@ -710,6 +758,7 @@ const RELICS = [
   {id:'shinhaeng', icon:'👣', name:'신행백변',   price:120, desc:'첫 턴 기력 +1'},
   {id:'hancheol',  icon:'🧤', name:'한철 호완',  price:100, desc:'획득 즉시 최대 체력 +10'},
   {id:'sulga',     icon:'🏺', name:'보은의 술도가', price:140, desc:'전투 승리 시 최대 체력 +2'},
+  {id:'byeokryeok',icon:'🌩️', name:'연환벽력수', price:180, desc:'연계 3 이상이면 공격 카드의 타격 횟수 +1'},
 ];
 
 // 플레이어블 캐릭터 — 슬더스식 캐릭터 선택 (시작 덱 포함)
@@ -729,6 +778,18 @@ const CHARACTERS = [
     art:{robe:'#8a4a5e', hair:'long', hairColor:'#3a322e', weapon:'staff', acc:'#68c2a0', skin:'#f0d8c2'},
   },
 ];
+
+// 다중 조우용 부하 적 (2막부터 2~3명 편성으로 등장)
+const MINIONS = {
+  jjol:     {face:'🥷', name:'철장방 졸개', hp:34, moves:[{t:'atk',v:9},{t:'atk',v:11}],
+             art:{robe:'#31423a', hair:'band', hairColor:'#26221e', weapon:'dao', acc:'#7a848e'}},
+  dobu:     {face:'🪓', name:'서역 도부수', hp:40, moves:[{t:'atk',v:10},{t:'def',v:6},{t:'atk',v:12}],
+             art:{robe:'#7a5a36', hair:'hood', hoodColor:'#a8895a', weapon:'dao', acc:'#8a6a3a', skin:'#c8a078'}},
+  hwasaeng: {face:'🎓', name:'화산 문하생', hp:45, moves:[{t:'atk',v:12},{t:'atk',v:14},{t:'def',v:8}],
+             art:{robe:'#46587a', hair:'topknot', weapon:'jian', acc:'#8ab0d8'}},
+  baekmu:   {face:'🏜️', name:'백타산 무사', hp:52, moves:[{t:'atk',v:13},{t:'buff',v:2},{t:'atk',v:15}],
+             art:{robe:'#8a8272', hair:'hood', hoodColor:'#d8d0bc', weapon:'palm', acc:'#b8a880', skin:'#c8a078'}},
+};
 
 // 막(Act) 구성 — 슬더스식 3막 구조, 영웅문 스토리 순서
 const ACTS = [
@@ -758,6 +819,13 @@ const ACTS = [
       {face:'🐎', name:'완안부 호위', hp:65, moves:[{t:'buff',v:3},{t:'atk',v:13},{t:'atk',v:15}],
        art:{robe:'#6a4a2a', hair:'helmet', weapon:'jian', acc:'#d9a441'}},
     ],
+    // 2막부터 다중 조우 (2~3명 편성)
+    groups:[
+      [MINIONS.jjol, MINIONS.jjol],
+      [MINIONS.jjol, MINIONS.jjol, MINIONS.jjol],
+      [MINIONS.dobu, MINIONS.jjol],
+      [MINIONS.dobu, MINIONS.dobu],
+    ],
     elite:{face:'🎭', name:'양강 · 배신의 왕자', hp:130, moves:[{t:'atk',v:16},{t:'def',v:12},{t:'atk',v:20},{t:'buff',v:4}],
        art:{robe:'#7a3a4a', hair:'coronet', weapon:'fan', acc:'#d9a441', aura:'#d9a441'}},
     boss:{face:'🌊', name:'구천인 · 철장수상표', hp:230, moves:[{t:'atk',v:16},{t:'atk',v:20},{t:'def',v:15},{t:'atk',v:26}],
@@ -771,6 +839,12 @@ const ACTS = [
        art:{robe:'#3a4a6a', hair:'topknot', weapon:'jian', acc:'#6ea8dc'}},
       {face:'🏔️', name:'백타산 고수', hp:100, moves:[{t:'atk',v:20},{t:'buff',v:4},{t:'atk',v:24}],
        art:{robe:'#8a8474', hair:'hood', hoodColor:'#ded8c8', weapon:'palm', acc:'#c8b890', skin:'#c8a078'}},
+    ],
+    groups:[
+      [MINIONS.hwasaeng, MINIONS.hwasaeng],
+      [MINIONS.hwasaeng, MINIONS.hwasaeng, MINIONS.hwasaeng],
+      [MINIONS.baekmu, MINIONS.hwasaeng],
+      [MINIONS.baekmu, MINIONS.baekmu],
     ],
     elite:{face:'🐍', name:'구양극 · 백타산 소주', hp:170, moves:[{t:'atk',v:22},{t:'def',v:16},{t:'atk',v:26},{t:'buff',v:5}],
        art:{robe:'#4a5a3a', hair:'coronet', weapon:'staffsnake', acc:'#7fae6a', aura:'#9a8a4a'}},
@@ -1005,11 +1079,15 @@ function cardBlock(card){
   if(hasRelic('dohwa') && d.type==='skill') v += 2;
   return v;
 }
-// 타격 횟수 (만천화우 비결: 다단히트 +1)
+// 타격 횟수: 만천화우 비결/쾌수비결 = 다단히트 +, 연환벽력수 = 연계 3↑이면 모든 공격 +1
 function cardHits(card){
   const d = CARD_DEFS[card.key];
   let h = d.hits || 1;
-  if(h>1 && hasRelic('mancheon')) h++;
+  if(h>1){
+    if(hasRelic('mancheon')) h++;
+    if(G.combat) h += (G.combat.hitsBonus || 0);
+  }
+  if(G.combat && d.dmg && hasRelic('byeokryeok') && G.combat.chainCount>=3) h++;
   return h;
 }
 // 중독/약화/회복/힘 등 공통 수치
@@ -1024,7 +1102,7 @@ function cardVal(card, field){
 function cardDesc(card){
   const d = CARD_DEFS[card.key];
   const parts = [];
-  if(d.dmg) parts.push(`피해 <b>${cardDmg(card)}</b>${cardHits(card)>1?` ×${cardHits(card)}`:''}`);
+  if(d.dmg) parts.push(`${d.aoe?'<b>모든 적</b>에게 ':''}피해 <b>${cardDmg(card)}</b>${cardHits(card)>1?` ×${cardHits(card)}`:''}`);
   if(d.block) parts.push(`방어 <b>${cardBlock(card)}</b>`);
   if(d.draw) parts.push(`카드 ${d.draw}장 뽑기`);
   if(d.heal) parts.push(`체력 ${cardVal(card,'heal')} 회복`);
@@ -1032,54 +1110,86 @@ function cardDesc(card){
   if(d.weak) parts.push(`약화 <b>${cardVal(card,'weak')}</b>`);
   if(d.strength) parts.push(`힘 +${cardVal(card,'strength')} (영구)`);
   if(d.perTurnBlock) parts.push(`매 턴 방어 +${cardVal(card,'perTurnBlock')}`);
+  if(d.hitsPlus) parts.push(`다단히트 타격 +${cardVal(card,'hitsPlus')} (지속)`);
   return parts.join('<br>');
 }
-// 적에게 피해 적용 (방어 먼저 소모), 실제 들어간 피해를 돌려준다
-function dealToEnemy(amount){
-  const e = G.combat.enemy;
+/* ===== 다중 적 헬퍼 ===== */
+// 살아있는 적 목록
+function aliveEnemies(){ return G.combat ? G.combat.enemies.filter(e=>!e.dead) : []; }
+// 현재 목표 적 (죽었으면 첫 생존자로 자동 이동)
+function curEnemy(){
+  const c = G.combat;
+  const t = c.enemies[c.target];
+  if(t && !t.dead) return t;
+  const a = aliveEnemies()[0];
+  if(a) c.target = a.idx;
+  return a;
+}
+// 적 클릭으로 목표 지정
+function setTarget(i){
+  const c = G.combat;
+  if(!c || c.busy) return;
+  const e = c.enemies[i];
+  if(!e || e.dead || c.target===i) return;
+  c.target = i;
+  sfx('card');
+  render();
+}
+// 특정 적에게 피해 적용 (방어 먼저 소모), 실제 들어간 피해를 돌려준다
+function dealToEnemy(amount, en){
+  const e = en || curEnemy();
+  if(!e) return 0;
   let dmg = amount;
   if(e.block>0){
     const ab = Math.min(e.block, dmg);
     e.block -= ab; dmg -= ab;
   }
   e.hp = Math.max(0, e.hp - dmg);
+  if(e.hp<=0) e.dead = true;
   return dmg;
 }
 
 /* ===== 전투 ===== */
-function startCombat(enemyDef, kind){
-  const enemy = {
-    face:enemyDef.face, name:enemyDef.name,
-    art:enemyDef.art, // SVG 초상 설정
-    hp:enemyDef.hp, maxHp:enemyDef.hp,
-    moves:enemyDef.moves, moveIdx:0,
+function startCombat(encounter, kind){
+  // 조우는 적 1~3명 배열 (단일 정의도 허용)
+  const defs = Array.isArray(encounter) ? encounter : [encounter];
+  const enemies = defs.map((d,i)=>({
+    idx:i,
+    face:d.face, name:d.name,
+    art:d.art, // SVG 초상 설정
+    hp:d.hp, maxHp:d.hp,
+    moves:d.moves, moveIdx:0,
     block:0, atkBonus:0,
-    poison:0, weak:0, // 상태이상
-  };
+    poison:0, weak:0, dead:false, // 상태이상·생사
+  }));
   G.combat = {
     kind, // 'fight' | 'elite' | 'boss'
-    enemy,
+    enemies, target:0,
+    encName: enemies[0].name + (enemies.length>1 ? ` 외 ${enemies.length-1}` : ''),
     drawPile:shuffle(G.deck.map(c=>({...c}))), // 전투용 사본 덱
     hand:[], discardPile:[],
     energy:0, maxEnergy:3 + (hasRelic('gueum')?1:0), // 기력 (구음진경 +1)
     block:0,
     strength: hasRelic('hangryong') ? 1 : 0, // 힘 (항룡십팔장 비급)
     perTurnBlock:0,   // 호체신공 누적
+    hitsBonus:0,      // 쾌수비결 누적 (다단히트 +)
     turn:0,
     firstAtkDone:false, // 일양지 (첫 공격 2배) 사용 여부
     chainSuit:null, chainCount:0, // 연계: 마지막 문파 / 연속 횟수
     busy:false,         // 연출 재생 중 입력 잠금
-    log: kind==='boss' ? ACTS[G.act].bossIntro : `${enemy.name}이(가) 길을 막는다!`,
+    hitEi:null,         // 방금 맞은 적 (연출용: 번호 또는 'all')
+    log: kind==='boss' ? ACTS[G.act].bossIntro :
+         (enemies.length>1 ? `${enemies.length}명의 적이 앞을 막아선다!` : `${enemies[0].name}이(가) 길을 막는다!`),
   };
-  // 진우의 철궁 — 전투 시작과 동시에 화살 한 발
+  // 진우의 철궁 — 전투 시작과 동시에 화살 한 발 (첫 번째 적)
   if(hasRelic('singung')){
-    enemy.hp = Math.max(1, enemy.hp - 15);
+    enemies[0].hp = Math.max(1, enemies[0].hp - 15);
     G.combat.log += ' 🏹 철궁이 먼저 울었다! (15 피해)';
   }
-  // 독질려 — 전투 시작 시 중독 살포
+  // 독질려 — 전투 시작 시 모든 적에게 중독 살포
   if(hasRelic('dokjil')){
-    enemy.poison = 4;
-    G.combat.log += ' 🌵 독질려가 흩뿌려졌다! (중독 4)';
+    enemies.forEach(e=>{ e.poison = 4; });
+    G.combat.log += ' 🌵 독질려가 흩뿌려졌다! (전원 중독 4)';
   }
   startPlayerTurn();
   G.screen='combat';
@@ -1129,21 +1239,27 @@ function playCard(id){
     render();
     return;
   }
+  const tgt = curEnemy(); // 현재 목표 적
+  if(d.dmg && !tgt) return;
   c.busy = true;
   sfx('card'); // 카드 내는 소리
   // 카드 비행 연출
   const el = document.querySelector(`[data-cid="${id}"]`);
   if(el) el.classList.add('fly');
-  // 공격 카드: 적을 향해 돌진 / 그 외: 시전 자세
-  const dashDist = figDistance();
-  if(d.dmg) dashTo('.player-fighter', dashDist);
-  else{
+  // 공격 카드: 목표 적을 향해 돌진 + 공격 동작 / 그 외: 시전 자세
+  const dashDist = figDistance(tgt ? `.enemy-face[data-ei="${tgt.idx}"]` : null);
+  if(d.dmg){
+    dashTo('.player-fighter', dashDist);
+    heroAnim('attack', 560);
+  }else{
     const pf = document.querySelector('.player-face');
     if(pf) pf.classList.add('cast');
   }
   setTimeout(()=>{
     if(G.combat!==c) return;
-    const e = c.enemy;
+    // 광역이면 모든 생존 적, 아니면 목표 적 하나
+    const targets = d.aoe ? aliveEnemies() : (tgt && !tgt.dead ? [tgt] : aliveEnemies().slice(0,1));
+    c.hitEi = null;
     c.energy -= d.cost;
     // 손에서 제거 (비공은 전투 동안 지속되므로 소멸, 나머지는 버림 더미로)
     const idx = c.hand.findIndex(h=>h.id===id);
@@ -1157,7 +1273,7 @@ function playCard(id){
     if(c.chainSuit === d.suit) c.chainCount++;
     else { c.chainSuit = d.suit; c.chainCount = 1; }
     // ── 공격 효과 ──
-    if(d.dmg){
+    if(d.dmg && targets.length){
       let per = cardDmg(card);
       if(hasRelic('ilyang') && !c.firstAtkDone){ per *= 2; logs.push('☝️ 일양지 개안 — 피해 2배!'); }
       c.firstAtkDone = true;
@@ -1167,37 +1283,41 @@ function playCard(id){
         isCrit = true;
         per = Math.floor(per * (hasRelic('chonggang') ? 2.5 : 2));
         logs.push(`💥 <b class="red">회심의 일격!</b> (${chance}%)`);
-        if(hasRelic('okbong')){ e.poison += 2; logs.push('🐝 옥봉침 — 중독 2'); }
+        if(hasRelic('okbong')){ targets.forEach(t=>{ t.poison += 2; }); logs.push('🐝 옥봉침 — 중독 2'); }
       }
       const hits = cardHits(card);
-      for(let i=0;i<hits;i++) dealToEnemy(per);
+      for(const t of targets){
+        for(let i=0;i<hits;i++) dealToEnemy(per, t);
+      }
       atkShown = per;
-      logs.push(`피해 <b class="gold">${per}${hits>1?'×'+hits:''}</b>`);
-      c.enemyHit = true;
+      logs.push(`피해 <b class="gold">${per}${hits>1?'×'+hits:''}</b>${d.aoe?' (전체)':''}`);
+      c.hitEi = d.aoe ? 'all' : targets[0].idx;
     }
-    // ── 연계기: 같은 문파 3연속(전진검진 보유 시 2연속)마다 자동 발동 ──
+    // ── 연계기: 같은 문파 3연속(전진검진 보유 시 2연속)마다 자동 발동 (첫 생존 적에게) ──
     const chainNeed = hasRelic('jinjin') ? 2 : 3;
-    if(c.chainCount >= chainNeed && c.chainCount % chainNeed === 0 && e.hp > 0){
+    const artTgt = curEnemy();
+    if(c.chainCount >= chainNeed && c.chainCount % chainNeed === 0 && (artTgt || d.suit==='gi')){
       chainArt = CHAIN_ARTS[d.suit];
-      if(d.suit==='gwon'){ dealToEnemy(8 + c.strength); }
-      else if(d.suit==='geom'){ dealToEnemy(5 + c.strength); dealToEnemy(5 + c.strength); }
-      else if(d.suit==='jang'){ dealToEnemy(5 + c.strength); e.weak += 1; }
+      if(d.suit==='gwon'){ dealToEnemy(8 + c.strength, artTgt); }
+      else if(d.suit==='geom'){ dealToEnemy(5 + c.strength, artTgt); dealToEnemy(5 + c.strength, artTgt); }
+      else if(d.suit==='jang'){ dealToEnemy(5 + c.strength, artTgt); if(artTgt) artTgt.weak += 1; }
       else { c.energy += 1; }
       logs.push(`🔗 연계기 【<b class="gold">${chainArt.name}</b>】`);
-      if(d.suit!=='gi') c.enemyHit = true;
+      if(d.suit!=='gi' && artTgt && c.hitEi===null) c.hitEi = artTgt.idx;
     }
-    // ── 방어·보조 효과 ──
+    // ── 방어·보조 효과 (중독/약화는 광역 여부 따름) ──
     if(d.block){ const b = cardBlock(card); c.block += b; logs.push(`🛡️ 방어 +${b}`); }
     if(d.heal){ const h = cardVal(card,'heal'); G.hp = Math.min(G.maxHp, G.hp+h); logs.push(`💚 회복 ${h}`); }
-    if(d.poison){ const p = cardVal(card,'poison'); e.poison += p; logs.push(`☠️ 중독 ${p}`); }
-    if(d.weak){ const w = cardVal(card,'weak'); e.weak += w; logs.push(`💫 약화 ${w}`); }
+    if(d.poison){ const p = cardVal(card,'poison'); targets.forEach(t=>{ t.poison += p; }); logs.push(`☠️ 중독 ${p}${d.aoe?' (전체)':''}`); }
+    if(d.weak){ const w = cardVal(card,'weak'); targets.forEach(t=>{ t.weak += w; }); logs.push(`💫 약화 ${w}${d.aoe?' (전체)':''}`); }
     if(d.strength){ const s = cardVal(card,'strength'); c.strength += s; logs.push(`💪 힘 +${s}`); }
     if(d.perTurnBlock){ const pb = cardVal(card,'perTurnBlock'); c.perTurnBlock += pb; logs.push(`🛡️ 매 턴 방어 +${pb}`); }
+    if(d.hitsPlus){ const hp2 = cardVal(card,'hitsPlus'); c.hitsBonus += hp2; logs.push(`⚡ 다단히트 타격 +${hp2}`); }
     if(d.draw) drawCards(d.draw);
     c.log = `${d.name}${card.up?'+':''} — ` + logs.join(' · ');
     render();
     // 타격 지점에서 렌더가 새로 그려졌으므로, 새 캐릭터를 적 앞에서 제자리로 복귀시킨다
-    if(d.dmg) dashBack('.player-fighter', dashDist);
+    if(d.dmg){ dashBack('.player-fighter', dashDist); heroAnim('attack', 320); }
     // 효과음: 공격은 문파별 타격음(크리티컬은 전용음), 방어·중독·연계기도 각각
     if(d.dmg) sfx(isCrit ? 'crit' : d.suit);
     else if(d.block) sfx('guard');
@@ -1205,63 +1325,70 @@ function playCard(id){
     else sfx('gi');
     if(d.dmg && d.block) sfx('guard');
     if(chainArt) sfx('chain');
-    // 연출: 크리티컬 > 연계기 > 큰 기술 순으로 스플래시, 공격은 문파별 이펙트
+    // 연출: 크리티컬 > 연계기 > 큰 기술 순으로 스플래시, 공격은 문파별 이펙트 (맞은 적마다)
     if(isCrit) fxSplash('회심의 일격!');
     else if(chainArt) fxSplash(chainArt.name, '연계기');
     else if(d.cost>=2) fxSplash(d.name);
-    const er = rectOf('.enemy-face');
-    if(er){
+    for(const t of targets){
+      const er = rectOf(`.enemy-face[data-ei="${t.idx}"]`);
+      if(!er) continue;
       const ex = er.left + er.width/2, ey = er.top + er.height/2;
       if(d.dmg){
         fxImpact(d.suit, ex, ey);
-        fxFloat(ex, er.top, atkShown*cardHits(card), isCrit ? '#ff5a40' : 'var(--gold)', isCrit ? 44 : 34);
-        if(isCrit) fxShake();
+        fxFloat(ex, er.top, atkShown*cardHits(card), isCrit ? '#ff5a40' : 'var(--gold)', isCrit ? 42 : 32);
       }
-      if(chainArt && d.suit!=='gi'){ fxRing(ex, ey, SUIT_FX[d.suit], 120); fxFloat(ex, ey+26, '연계 '+chainArt.name, SUIT_FX[d.suit], 18); }
-      if(chainArt && d.suit==='gi') fxFloat(ex, ey, '⚡ 기순환 +1', SUIT_FX.gi, 22);
-      if(d.poison) fxFloat(ex+40, ey, '☠️', '#9acd6a', 24);
-      if(d.weak) fxFloat(ex-40, ey, '💫', '#c8a0e0', 24);
+      if(d.poison) fxFloat(ex+34, ey, '☠️', '#9acd6a', 22);
+      if(d.weak) fxFloat(ex-34, ey, '💫', '#c8a0e0', 22);
+    }
+    if(isCrit) fxShake();
+    if(chainArt && artTgt){
+      const ar = rectOf(`.enemy-face[data-ei="${artTgt.idx}"]`);
+      if(ar && d.suit!=='gi'){ fxRing(ar.left+ar.width/2, ar.top+ar.height/2, SUIT_FX[d.suit], 120); fxFloat(ar.left+ar.width/2, ar.top+ar.height/2+26, '연계 '+chainArt.name, SUIT_FX[d.suit], 17); }
+    }
+    if(chainArt && d.suit==='gi'){
+      const pr = rectOf('.player-face');
+      if(pr) fxFloat(pr.left+pr.width/2, pr.top, '⚡ 기순환 +1', SUIT_FX.gi, 20);
     }
     if(d.block){
       const pf = rectOf('.player-face');
       if(pf) fxGuard(pf.left + pf.width/2, pf.top + pf.height*0.55, cardBlock(card));
     }
-    // 적 격파 시: KO 연출 후 승리
-    if(e.hp<=0){
-      const ef = document.querySelector('.enemy-face');
-      if(ef) ef.classList.add('ko');
+    // 전멸 시: KO 연출 후 승리
+    if(!aliveEnemies().length){
+      document.querySelectorAll('.enemy-face').forEach(ef=>ef.classList.add('ko'));
       setTimeout(()=>{ if(G.combat===c) winCombat(); }, 700);
       return;
     }
     setTimeout(()=>{
       if(G.combat!==c) return;
-      c.enemyHit = false;
+      c.hitEi = null;
       c.busy = false;
       render();
     }, d.dmg ? 340 : 140);
   }, 250);
 }
 
-// 턴 종료 — 비급 여운 정산 → 손 버리기 → 적 행동 → 새 턴
+// 턴 종료 — 비급 여운 정산 → 손 버리기 → 적들의 순차 행동 → 새 턴
 function endTurn(){
   const c = G.combat;
   if(!c || c.busy) return;
   c.busy = true;
-  const e = c.enemy;
-  // 탄지신통(남은 기력×3) / 벽해조생곡(4) — 턴 종료 여운 피해
+  // 탄지신통(남은 기력×3) / 벽해조생곡(4) — 턴 종료 여운 피해 (목표 적)
   let bonus = 0;
   if(hasRelic('tanji') && c.energy>0) bonus += c.energy*3;
   if(hasRelic('byeokhae')) bonus += 4;
   if(bonus>0){
-    dealToEnemy(bonus);
-    const er = rectOf('.enemy-face');
-    if(er){ fxRing(er.left+er.width/2, er.top+er.height/2, SUIT_FX.gi, 0); fxFloat(er.left+er.width/2, er.top, bonus, 'var(--gi)', 24); }
+    const bt = curEnemy();
+    if(bt){
+      dealToEnemy(bonus, bt);
+      const er = rectOf(`.enemy-face[data-ei="${bt.idx}"]`);
+      if(er){ fxRing(er.left+er.width/2, er.top+er.height/2, SUIT_FX.gi, 0); fxFloat(er.left+er.width/2, er.top, bonus, 'var(--gi)', 24); }
+    }
   }
-  if(e.hp<=0){
+  if(!aliveEnemies().length){
     c.log = '🎯 여운의 일격이 적을 쓰러뜨렸다!';
     render();
-    const ef = document.querySelector('.enemy-face');
-    if(ef) ef.classList.add('ko');
+    document.querySelectorAll('.enemy-face').forEach(ef=>ef.classList.add('ko'));
     setTimeout(()=>{ if(G.combat===c) winCombat(); }, 700);
     return;
   }
@@ -1270,79 +1397,83 @@ function endTurn(){
   c.hand = [];
   c.log = bonus>0 ? `🎯 여운 피해 ${bonus}` : `${c.turn}번째 합 종료.`;
   render();
-  // 적 행동 연출 (공격이면 나를 향해 돌진)
-  const mv = e.moves[e.moveIdx % e.moves.length];
-  const eDash = figDistance();
-  if(mv.t==='atk') dashTo('.enemy-fighter', -eDash);
-  setTimeout(()=>{
-    if(G.combat!==c) return;
-    const res = enemyTurn();
-    if(res.win){ // 중독이 적을 쓰러뜨림
-      render();
-      const ef2 = document.querySelector('.enemy-face');
-      if(ef2) ef2.classList.add('ko');
-      setTimeout(()=>{ if(G.combat===c) winCombat(); }, 700);
-      return;
-    }
-    if(G.screen==='gameover'){ sfx('lose'); render(); return; }
-    // 타격 순간: 화면 흔들림 + 붉은 섬광 + 효과음
-    if(res.mv && res.mv.t==='atk'){
-      if(res.dealt>0){ fxShake(); fxVignette(); sfx('hurt'); }
-      else if(res.absorbed>0) sfx('guard');
-    }
+  enemyPhase(0); // 적들이 한 명씩 순서대로 행동
+}
+
+// 적 행동 단계 — i번째 적부터 순차 진행 (중독 정산 → 의도 실행 → 다음 적)
+function enemyPhase(i){
+  const c = G.combat;
+  if(!c || G.combat!==c) return;
+  // 모든 적이 행동을 마치면 새 턴 시작
+  if(i >= c.enemies.length){
     startPlayerTurn();
     c.busy = false;
     render();
-    // 새로 그려진 화면 기준으로: 적 복귀 + 내 캐릭터 피격/방어 연출
-    if(res.mv && res.mv.t==='atk'){
-      dashBack('.enemy-fighter', -eDash);
+    return;
+  }
+  const en = c.enemies[i];
+  if(en.dead){ enemyPhase(i+1); return; }
+  // 중독: 행동 전 남은 수치만큼 피해 후 1 감소
+  if(en.poison>0){
+    en.hp = Math.max(0, en.hp - en.poison);
+    c.log += `<br>☠️ ${esc(en.name)} 중독 피해 ${en.poison}`;
+    sfx('poison');
+    const er = rectOf(`.enemy-face[data-ei="${en.idx}"]`);
+    if(er) fxFloat(er.left+er.width/2, er.top+24, en.poison, '#9acd6a', 22);
+    en.poison--;
+    if(en.hp<=0){
+      en.dead = true;
+      render();
+      if(!aliveEnemies().length){
+        document.querySelectorAll('.enemy-face').forEach(ef=>ef.classList.add('ko'));
+        setTimeout(()=>{ if(G.combat===c) winCombat(); }, 700);
+        return;
+      }
+      setTimeout(()=>enemyPhase(i+1), 350);
+      return;
+    }
+  }
+  const mv = en.moves[en.moveIdx % en.moves.length];
+  const eDash = figDistance(`.enemy-face[data-ei="${en.idx}"]`);
+  if(mv.t==='atk') dashTo(`.enemy-fighter[data-ei="${en.idx}"]`, -eDash);
+  setTimeout(()=>{
+    if(G.combat!==c) return;
+    en.moveIdx++;
+    let dealt = 0, absorbed = 0;
+    if(mv.t==='atk'){
+      let dmg = mv.v + en.atkBonus;
+      if(en.weak>0) dmg = Math.floor(dmg*0.75); // 약화: 공격력 25% 감소
+      absorbed = Math.min(c.block, dmg);
+      c.block -= absorbed; dmg -= absorbed;
+      G.hp = Math.max(0, G.hp - dmg);
+      dealt = dmg;
+      c.log += `<br>🗡️ ${esc(en.name)}의 공격! <b class="red">${dmg}</b> 피해` + (absorbed?` (${absorbed} 방어)`:'') + (en.weak>0?' <span class="dim">— 약화됨</span>':'');
+      if(G.hp<=0){ G.screen='gameover'; sfx('lose'); render(); return; }
+      if(dealt>0){ fxShake(); fxVignette(); sfx('hurt'); }
+      else if(absorbed>0) sfx('guard');
+    }else if(mv.t==='def'){
+      en.block += mv.v;
+      c.log += `<br>🛡️ ${esc(en.name)}이(가) 수세를 취한다. (방어 ${mv.v})`;
+    }else if(mv.t==='buff'){
+      en.atkBonus += mv.v;
+      c.log += `<br>🔥 ${esc(en.name)}의 기세가 오른다! (공격 +${mv.v})`;
+    }
+    if(en.weak>0) en.weak--; // 약화 지속 감소
+    render();
+    // 복귀 + 내 캐릭터 피격/방어 연출
+    if(mv.t==='atk'){
+      dashBack(`.enemy-fighter[data-ei="${en.idx}"]`, -eDash);
       const pf = rectOf('.player-face');
-      if(res.dealt>0){
+      if(dealt>0){
         const pfe = document.querySelector('.player-face');
         if(pfe) pfe.classList.add('hit');
-        if(pf) fxFloat(pf.left+pf.width/2, pf.top, '-'+res.dealt, '#e06050', 30);
+        heroAnim('hurtanim', 420); // 피격 스프라이트 동작
+        if(pf) fxFloat(pf.left+pf.width/2, pf.top, '-'+dealt, '#e06050', 30);
       }
-      if(res.absorbed>0 && pf) fxGuardHit(pf.left+pf.width/2, pf.top+pf.height*0.55, res.absorbed, res.dealt===0);
+      if(absorbed>0 && pf) fxGuardHit(pf.left+pf.width/2, pf.top+pf.height*0.55, absorbed, dealt===0);
     }
-  }, mv.t==='atk' ? 300 : 160);
-}
-
-// 적 행동 — 중독 정산 → 의도(공격/방어/기세) 실행. 연출용 결과를 돌려준다
-function enemyTurn(){
-  const c = G.combat;
-  const e = c.enemy;
-  const res = {mv:null, dealt:0, absorbed:0, win:false};
-  // 중독: 적 턴 시작 시 남은 수치만큼 피해, 이후 1 감소
-  if(e.poison>0){
-    e.hp = Math.max(0, e.hp - e.poison);
-    c.log += `<br>☠️ 중독 피해 ${e.poison}`;
-    sfx('poison');
-    const er = rectOf('.enemy-face');
-    if(er) fxFloat(er.left+er.width/2, er.top+24, e.poison, '#9acd6a', 22);
-    e.poison--;
-    if(e.hp<=0){ res.win = true; return res; }
-  }
-  const mv = e.moves[e.moveIdx % e.moves.length];
-  e.moveIdx++;
-  res.mv = mv;
-  if(mv.t==='atk'){
-    let dmg = mv.v + e.atkBonus;
-    if(e.weak>0) dmg = Math.floor(dmg*0.75); // 약화: 공격력 25% 감소
-    const absorbed = Math.min(c.block, dmg);
-    c.block -= absorbed; dmg -= absorbed;
-    G.hp = Math.max(0, G.hp - dmg);
-    res.dealt = dmg; res.absorbed = absorbed;
-    c.log += `<br>🗡️ ${esc(e.name)}의 공격! <b class="red">${dmg}</b> 피해` + (absorbed?` (${absorbed} 방어)`:'') + (e.weak>0?' <span class="dim">— 약화됨</span>':'');
-    if(G.hp<=0){ G.screen='gameover'; }
-  }else if(mv.t==='def'){
-    e.block += mv.v;
-    c.log += `<br>🛡️ ${esc(e.name)}이(가) 수세를 취한다. (방어 ${mv.v})`;
-  }else if(mv.t==='buff'){
-    e.atkBonus += mv.v;
-    c.log += `<br>🔥 ${esc(e.name)}의 기세가 오른다! (공격 +${mv.v})`;
-  }
-  if(e.weak>0) e.weak--; // 약화 지속 감소
-  return res;
+    setTimeout(()=>enemyPhase(i+1), mv.t==='atk' ? 420 : 260);
+  }, mv.t==='atk' ? 300 : 140);
 }
 
 // 다음 적 의도 미리보기 (약화 반영)
@@ -1378,7 +1509,7 @@ function winCombat(){
     const avail = RELICS.filter(r=>!G.relics.includes(r.id));
     if(avail.length) relicChoice = pick(avail);
   }
-  G.reward = {gold, cardChoices, relicChoice, kind:c.kind, enemyName:c.enemy.name};
+  G.reward = {gold, cardChoices, relicChoice, kind:c.kind, enemyName:c.encName};
   G.combat = null;
   G.screen='reward';
   render();
@@ -1413,7 +1544,11 @@ function finishNode(){
 /* ===== 노드 진입 ===== */
 function enterNode(type){
   const act = ACTS[G.act];
-  if(type==='fight') startCombat(pick(act.pool), 'fight');
+  if(type==='fight'){
+    // 1막은 단독 조우만, 2막부터 55% 확률로 2~3명 편성 등장
+    const enc = (act.groups && Math.random()<0.55) ? pick(act.groups) : [pick(act.pool)];
+    startCombat(enc, 'fight');
+  }
   else if(type==='elite') startCombat(act.elite, 'elite');
   // 보스는 대화 나레이션을 먼저 보여준 뒤 전투 시작
   else if(type==='boss') showStory([STORY.bossPre[G.act]], ()=>startCombat(ACTS[G.act].boss, 'boss'), '비무 개시!');
@@ -1532,10 +1667,8 @@ function hudHTML(){
     <span class="dim">🗂️ 덱 ${G.deck.length}장</span>
     <span class="relic-strip">${relics}</span>
     <span class="spacer"></span>
-    <button onclick="toggleSfx()" style="padding:5px 10px; font-size:13px;" title="효과음 켜기/끄기">${sfxOn?'🔊':'🔇'}</button>
-    <button onclick="showGuide()" style="padding:5px 12px; font-size:13px;">가이드</button>
-    <button onclick="showCodex()" style="padding:5px 12px; font-size:13px;">비전서</button>
     <button onclick="showDeck()" style="padding:5px 12px; font-size:13px;">덱 보기</button>
+    <button onclick="showMenu()" style="padding:5px 14px; font-size:13px;">☰ 메뉴</button>
   </div>`;
 }
 
@@ -1582,7 +1715,7 @@ function renderCharSelect(){
   const cards = CHARACTERS.map(ch=>{
     const r = relicInfo(ch.relic);
     return `<div class="char-card" onclick="startRun('${ch.id}')">
-      <div class="char-portrait">${enemySVG(ch.art)}</div>
+      <div class="char-portrait" style="display:flex; justify-content:center;"><div class="hero-sprite h-${ch.id} idle"></div></div>
       <div class="char-name">${ch.name}</div>
       <div class="char-title">${ch.title}</div>
       <div class="char-stat">
@@ -1685,14 +1818,27 @@ function cardHTML(c, extra, onclick){
 
 function renderCombat(){
   const c = G.combat;
-  const e = c.enemy;
-  const it = intentText(e);
   const kindLabel = c.kind==='boss'?'👑 보스전':c.kind==='elite'?'💀 정예전':'⚔️ 전투';
-  // 적 상태이상 표시
-  const chips = [];
-  if(e.poison>0) chips.push(`<span class="st-chip" style="color:#9acd6a">☠️ 중독 ${e.poison}</span>`);
-  if(e.weak>0) chips.push(`<span class="st-chip" style="color:#c8a0e0">💫 약화 ${e.weak}</span>`);
-  if(e.atkBonus>0) chips.push(`<span class="st-chip" style="color:#e08050">🔥 기세 +${e.atkBonus}</span>`);
+  // 적 초상 크기: 수가 많을수록 작게
+  const n = c.enemies.length;
+  const sz = n>=3 ? 84 : n===2 ? 104 : 130;
+  // 적 캐릭터들 (클릭 = 목표 지정)
+  const enemyFigs = c.enemies.map(en=>{
+    const it = intentText(en);
+    const st = [];
+    if(en.poison>0) st.push(`<span style="color:#9acd6a">☠${en.poison}</span>`);
+    if(en.weak>0) st.push(`<span style="color:#c8a0e0">💫${en.weak}</span>`);
+    if(en.atkBonus>0) st.push(`<span style="color:#e08050">🔥+${en.atkBonus}</span>`);
+    const hitCls = (c.hitEi==='all' || c.hitEi===en.idx) ? 'hit' : '';
+    const tgtCls = (!en.dead && c.target===en.idx && aliveEnemies().length>1) ? 'targeted' : '';
+    return `<div class="fighter enemy-fighter ${en.dead?'dead':''} ${tgtCls}" data-ei="${en.idx}" onclick="setTarget(${en.idx})">
+      <div class="fhead" style="font-size:${n>1?13:16}px;">${esc(en.name)}</div>
+      <div class="intent-chip">${en.dead ? '☠ 격파' : `${it.icon} ${it.text}`}</div>
+      <div class="enemy-face ${hitCls}" data-ei="${en.idx}" style="--fsz:${sz}px;">${en.art ? enemySVG(en.art) : en.face}</div>
+      <div class="fhp enemy" style="width:${sz+30}px;"><div class="fhp-fill" style="width:${en.hp/en.maxHp*100}%"></div><span>${en.hp}/${en.maxHp}${en.block?` 🛡${en.block}`:''}</span></div>
+      <div class="fstats" style="font-size:12px;">${st.join(' ') || ''}</div>
+    </div>`;
+  }).join('');
   // 손패 (기력 부족 카드는 흐리게)
   const handCards = c.hand.map(card=>{
     const no = c.energy < CARD_DEFS[card.key].cost ? 'noenergy' : '';
@@ -1702,7 +1848,7 @@ function renderCombat(){
     <div class="battlefield">
       <div class="fighter player-fighter">
         <div class="fhead"><b>${G.char.name}</b></div>
-        <div class="player-face">${enemySVG(G.char.art)}</div>
+        <div class="player-face"><div class="hero-sprite h-${G.char.id} idle"></div></div>
         <div class="fhp"><div class="fhp-fill" style="width:${Math.max(0,G.hp/G.maxHp*100)}%"></div><span>${G.hp} / ${G.maxHp}</span></div>
         <div class="fstats">
           <span id="myblock">🛡️ ${c.block}</span>
@@ -1714,14 +1860,9 @@ function renderCombat(){
         <div style="font-size:12px;">${kindLabel}</div>
         <div style="font-size:24px;">⚔</div>
         <div style="font-size:12px;">${c.turn}합</div>
+        ${aliveEnemies().length>1 ? '<div style="font-size:11px;" class="dim">적을 눌러<br>목표 지정</div>' : ''}
       </div>
-      <div class="fighter enemy-fighter">
-        <div class="fhead">${esc(e.name)}</div>
-        <div class="intent-chip">다음: ${it.icon} ${it.text}</div>
-        <div class="enemy-face ${c.enemyHit?'hit':''}">${e.art ? enemySVG(e.art) : e.face}</div>
-        <div class="fhp enemy"><div class="fhp-fill" style="width:${e.hp/e.maxHp*100}%"></div><span>${e.hp} / ${e.maxHp}${e.block?` 🛡️${e.block}`:''}</span></div>
-        <div class="fstats">${chips.join('') || '<span class="dim" style="font-size:11px;">상태 이상 없음</span>'}</div>
-      </div>
+      <div class="enemy-group">${enemyFigs}</div>
     </div>
     <div class="player-bar">
       <div class="energy-orb" title="기력 — 카드를 낼 때 소모"><b>${c.energy}</b>/${c.maxEnergy}</div>
@@ -2071,16 +2212,17 @@ function fxSlashLine(x, y, color, deg, delay){
 function fxImpact(suit, x, y){
   const color = SUIT_FX[suit] || '#fff';
   if(suit==='geom'){
+    fxSprite('fx_slash', 5, x, y, 130); // 픽셀 참격 (pimen VFX)
     fxSlashLine(x, y, color, -38, 0);
     fxSlashLine(x, y, color, 24, 110);
-    fxSlashLine(x, y, color, -80, 220);
     fxBurst(x, y, color, 8);
   }else if(suit==='jang'){
     fxRing(x, y, color, 0);
     fxRing(x, y, color, 140);
     fxBurst(x, y, color, 8);
   }else if(suit==='gwon'){
-    fxBurst(x, y, color, 20);
+    fxSprite('fx_hit', 7, x, y, 120); // 픽셀 타격 섬광 (pimen VFX)
+    fxBurst(x, y, color, 14);
     fxRing(x, y, color, 60);
   }else{ // gi
     fxRing(x, y, color, 0);
@@ -2118,9 +2260,9 @@ function fxShake(){
   setTimeout(()=>app.classList.remove('shake-app'), 450);
 }
 /* --- 돌진 모션 (슬더스식 대치 전장) --- */
-// 두 캐릭터 사이 거리 (돌진 이동량)
-function figDistance(){
-  const p = rectOf('.player-face'), e = rectOf('.enemy-face');
+// 두 캐릭터 사이 거리 (돌진 이동량) — sel로 특정 적 지정 가능
+function figDistance(sel){
+  const p = rectOf('.player-face'), e = rectOf(sel || '.enemy-face');
   if(!p || !e) return 260;
   return Math.max(80, e.left - p.right + 30);
 }
@@ -2138,6 +2280,27 @@ function dashBack(sel, dx){
   el.style.setProperty('--dash', dx+'px');
   el.classList.add('dashback');
   setTimeout(()=>el.classList.remove('dashback'), 360);
+}
+// 주인공 스프라이트 동작 전환 (attack/hurtanim → 끝나면 idle 복귀)
+function heroAnim(state, durMs){
+  const el = document.querySelector('.hero-sprite');
+  if(!el) return;
+  el.classList.remove('idle','attack','hurtanim');
+  el.classList.add(state);
+  setTimeout(()=>{
+    const e2 = document.querySelector('.hero-sprite');
+    if(e2){ e2.classList.remove('attack','hurtanim'); e2.classList.add('idle'); }
+  }, durMs);
+}
+// 픽셀 이펙트 스프라이트 재생 (itch.io pimen VFX)
+function fxSprite(sheet, frames, x, y, size){
+  const el = document.createElement('div');
+  el.className = 'fx-sprite';
+  el.style.cssText = `left:${x-size/2}px; top:${y-size/2}px; width:${size}px; height:${size}px;
+    background-image:url('assets/${sheet}.png');
+    --fxend:${-frames*size}px;
+    animation:fxspr ${(frames*0.055).toFixed(2)}s steps(${frames}) forwards;`;
+  fxAdd(el, frames*55+100);
 }
 
 /* ===== 비전서 (초식/연계/비급 도감) ===== */
@@ -2204,6 +2367,7 @@ function showGuide(){
       <h3>⚔️ 전투 — 한 턴의 순서</h3>
       <p>① 매 턴 <b class="gold">기력 3</b>을 받고 카드 5장을 뽑는다 → ② 카드 왼쪽 위 숫자(기력 비용)를 확인하고 <b>카드를 눌러 사용</b>한다 → ③ 기력이 남는 한 몇 장이든 낼 수 있다 → ④ <b>[턴 종료]</b>를 누르면 적이 예고된 행동(⚔️공격 / 🛡️방어 / 🔥기세)을 실행한다.</p>
       <p>남은 손패는 턴 종료 시 전부 버려지고, 다음 턴에 새로 5장을 뽑는다. 덱이 다 떨어지면 버린 패를 섞어 다시 쓴다.</p>
+      <p>2막부터는 적이 <b>2~3명</b>씩 몰려온다. <b>적을 눌러 목표(▼)를 지정</b>하고, "모든 적에게" 카드(횡소천군·선풍퇴·사자후)로 한꺼번에 쓸어버리자.</p>
       <h3>🛡️ 방어</h3>
       <p>방어·기술 카드로 <b style="color:var(--gi)">방어</b>를 쌓으면 적의 공격을 먼저 흡수한다. 단, <b>내 턴이 시작되면 방어는 사라진다</b> — 적의 예고 공격력을 보고 필요한 만큼만 쌓을 것.</p>
       <h3>☠️ 상태 이상</h3>
@@ -2225,6 +2389,36 @@ function showGuide(){
 // localStorage 안전 접근 (차단 환경 대비)
 function storageGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
 function storageSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
+
+/* ===== 게임 중 메뉴 (☰) ===== */
+function showMenu(){
+  const ov = document.createElement('div');
+  ov.className = 'overlay';
+  ov.innerHTML = `<div class="center-panel" style="max-width:340px; gap:10px;">
+    <h2 style="font-size:22px;">메뉴</h2>
+    <button class="primary" style="font-size:16px;" onclick="this.closest('.overlay').remove()">▶️ 계속하기</button>
+    <button onclick="this.closest('.overlay').remove(); showCodex();">📖 비전서 (카드·비급 도감)</button>
+    <button onclick="this.closest('.overlay').remove(); showGuide();">❓ 놀이법</button>
+    <button onclick="toggleSfxInMenu(this)">${sfxOn?'🔊 효과음 켜짐':'🔇 효과음 꺼짐'}</button>
+    <button style="color:#e06050; border-color:#6a3a32;" onclick="exitToTitle()">🚪 타이틀로 나가기</button>
+    <div class="dim" style="font-size:12px; line-height:1.7;">진행은 층 단위로 자동 저장됩니다.<br>전투 도중에 나가면 이번 층은 처음부터 다시 싸웁니다.</div>
+  </div>`;
+  ov.addEventListener('click', e=>{ if(e.target===ov) ov.remove(); });
+  document.body.appendChild(ov);
+}
+// 메뉴 안에서 효과음 토글 (버튼 문구만 갱신, 화면 재렌더 없이)
+function toggleSfxInMenu(btn){
+  sfxOn = !sfxOn;
+  storageSet('hg_sfx', sfxOn ? 'on' : 'off');
+  if(sfxOn) sfx('gold');
+  btn.textContent = sfxOn ? '🔊 효과음 켜짐' : '🔇 효과음 꺼짐';
+}
+// 타이틀 화면으로 (마지막 층 경계 저장은 유지됨)
+function exitToTitle(){
+  document.querySelectorAll('.overlay').forEach(o=>o.remove());
+  G = null;
+  render();
+}
 
 /* ===== 자동 저장 / 이어하기 =====
    층을 넘어갈 때마다 진행 상황을 브라우저에 저장한다.
