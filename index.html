@@ -387,10 +387,14 @@ h1,h2,h3{font-weight:600;}
   width:170px; height:170px;
   background-repeat:no-repeat; background-size:auto 100%;
   image-rendering:pixelated;
-  /* 원본 캔버스 여백 보정: 인물이 크게 보이도록 확대 */
-  transform:scale(1.6);
-  transform-origin:50% 72%;
 }
+/* 원본 캔버스 여백 보정 (실측: 인물 y70~127/200, 발 60~63%) — 발을 바닥에 붙이고 크게 확대 */
+.h-jinwoo{transform:translateY(66px) scale(3.4); transform-origin:50% 60%;}
+.h-sunwoo{transform:translateY(60px) scale(3.3); transform-origin:50% 63%;}
+/* 이름이 스프라이트에 가리지 않도록 간격 확보 */
+.player-fighter .fhead{margin-bottom:30px;}
+/* 캐릭터 선택 화면에서는 살짝 작게 */
+.char-portrait .h-jinwoo, .char-portrait .h-sunwoo{transform:translateY(52px) scale(2.2); transform-origin:50% 61%;}
 /* 진우 (Martial Hero): 대기 8프레임 / 공격 6 / 피격 4 */
 .h-jinwoo.idle{background-image:url('assets/jinwoo_idle.png'); animation:sprJi .9s steps(8) infinite;}
 .h-jinwoo.attack{background-image:url('assets/jinwoo_attack.png'); animation:sprJa .5s steps(6) forwards;}
