@@ -379,36 +379,35 @@ h1,h2,h3{font-weight:600;}
   display:flex; flex-direction:column; align-items:center; gap:4px;
   align-self:center; color:var(--dim);
 }
-/* 내 캐릭터 초상 (숨쉬기) */
-.player-face{animation:bob 3.4s ease-in-out infinite;}
+/* 내 캐릭터 초상 — 스프라이트 자체에 숨쉬기 프레임이 있어 부유(bob) 효과는 주지 않는다 (발이 땅에 붙어 있도록) */
 .player-face svg{width:130px; height:130px; display:block;}
-/* ===== 주인공 픽셀 스프라이트 (itch.io CC0 — LuizMelo Martial Hero 1·2) ===== */
+/* ===== 주인공 픽셀 스프라이트 (itch.io CC0 — LuizMelo Martial Hero 1·2) =====
+   시트는 인물 경계로 잘라둠(여백 없음) → 요소 바닥 = 인물 발.
+   표시 크기는 원본의 정확히 2배 (진우 프레임 127×73 → 254×146, 선우 116×69 → 232×138) */
 .hero-sprite{
-  width:170px; height:170px;
+  position:relative;
   background-repeat:no-repeat; background-size:auto 100%;
   image-rendering:pixelated;
 }
-/* 원본 캔버스 여백 보정 (실측: 인물 y70~127/200, 발 60~63%) — 발을 바닥에 붙이고 크게 확대 */
-.h-jinwoo{transform:translateY(66px) scale(3.4); transform-origin:50% 60%;}
-.h-sunwoo{transform:translateY(60px) scale(3.3); transform-origin:50% 63%;}
-/* 이름이 스프라이트에 가리지 않도록 간격 확보 */
-.player-fighter .fhead{margin-bottom:30px;}
-/* 캐릭터 선택 화면에서는 살짝 작게 */
-.char-portrait .h-jinwoo, .char-portrait .h-sunwoo{transform:translateY(52px) scale(2.2); transform-origin:50% 61%;}
+/* left 보정: 검 휘두름 공간 때문에 프레임이 오른쪽으로 넓음 → 인물이 열 중앙에 오도록 */
+.h-jinwoo{width:254px; height:146px; left:67px;}
+.h-sunwoo{width:232px; height:138px; left:60px;}
 /* 진우 (Martial Hero): 대기 8프레임 / 공격 6 / 피격 4 */
 .h-jinwoo.idle{background-image:url('assets/jinwoo_idle.png'); animation:sprJi .9s steps(8) infinite;}
 .h-jinwoo.attack{background-image:url('assets/jinwoo_attack.png'); animation:sprJa .5s steps(6) forwards;}
 .h-jinwoo.hurtanim{background-image:url('assets/jinwoo_hit.png'); animation:sprJh .4s steps(4) forwards;}
-@keyframes sprJi{to{background-position-x:-1360px;}}
-@keyframes sprJa{to{background-position-x:-1020px;}}
-@keyframes sprJh{to{background-position-x:-680px;}}
+@keyframes sprJi{to{background-position-x:-2032px;}}
+@keyframes sprJa{to{background-position-x:-1524px;}}
+@keyframes sprJh{to{background-position-x:-1016px;}}
 /* 선우 (Martial Hero 2): 대기 4 / 공격 4 / 피격 3 */
 .h-sunwoo.idle{background-image:url('assets/sunwoo_idle.png'); animation:sprSi .8s steps(4) infinite;}
 .h-sunwoo.attack{background-image:url('assets/sunwoo_attack.png'); animation:sprSa .45s steps(4) forwards;}
 .h-sunwoo.hurtanim{background-image:url('assets/sunwoo_hit.png'); animation:sprSh .35s steps(3) forwards;}
-@keyframes sprSi{to{background-position-x:-680px;}}
-@keyframes sprSa{to{background-position-x:-680px;}}
-@keyframes sprSh{to{background-position-x:-510px;}}
+@keyframes sprSi{to{background-position-x:-928px;}}
+@keyframes sprSa{to{background-position-x:-928px;}}
+@keyframes sprSh{to{background-position-x:-696px;}}
+/* 캐릭터 선택 화면에서는 카드에 맞게 축소 */
+.char-portrait .hero-sprite{transform:scale(.8); transform-origin:50% 100%;}
 /* 픽셀 이펙트 스프라이트 (pimen VFX) */
 .fx-sprite{
   position:fixed; z-index:206; pointer-events:none;
